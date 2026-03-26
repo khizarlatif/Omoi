@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omoi</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #131f24; --surface: #1a2d36; --card: #233540;
+  --green: #58cc02; --green-dark: #46a302;
+  --blue: #1cb0f6; --yellow: #ffd900; --red: #ff4b4b;
+  --text: #e8f5fc; --muted: #7a9fb0; --border: #2d4a5a; --hover: #2e4d60;
+  --r: 16px; --rs: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:var(--bg); color:var(--text); font-family:'Nunito',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+.header { width:100%; max-width:520px; padding:26px 20px 0; display:flex; align-items:center; gap:12px; }
+.logo { width:40px; height:40px; background:var(--green); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 4px 0 var(--green-dark); }
+.header h1 { font-size:22px; font-weight:900; }
+.header h1 span { color:var(--green); }
+
+.tabs { width:100%; max-width:520px; padding:18px 20px 0; display:flex; gap:8px; }
+.tab { flex:1; padding:12px 0; border:none; border-radius:var(--rs); font-family:'Nunito',sans-serif; font-size:14px; font-weight:800; cursor:pointer; transition:all 0.15s; background:var(--surface); color:var(--muted); border-bottom:3px solid transparent; }
+.tab.active { background:var(--card); color:var(--green); border-bottom-color:var(--green); }
+.tab:hover:not(.active) { background:var(--hover); color:var(--text); }
+
+.main { width:100%; max-width:520px; padding:16px 20px 40px; flex:1; }
+.panel { display:none; } .panel.active { display:block; }
+
+.form-card { background:var(--surface); border-radius:var(--r); padding:20px; border:2px solid var(--border); }
+.datetime-badge { display:inline-flex; align-items:center; gap:6px; background:var(--card); border-radius:20px; padding:6px 14px; font-size:12px; font-weight:700; color:var(--blue); margin-bottom:16px; border:1px solid var(--border); }
+.datetime-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--blue); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+label { display:block; font-size:11px; font-weight:800; color:var(--muted); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:6px; }
+.field-group { margin-bottom:16px; }
+
+.combo-wrap { position:relative; }
+.combo-input { width:100%; background:var(--card); border:2px solid var(--border); border-radius:var(--rs); padding:12px 44px 12px 14px; color:var(--text); font-family:'Nunito',sans-serif; font-size:15px; font-weight:600; outline:none; transition:border-color 0.15s; }
+.combo-input:focus { border-color:var(--blue); }
+.combo-input::placeholder { color:var(--muted); }
+.combo-arrow { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); cursor:pointer; font-size:14px; user-select:none; transition:transform 0.2s; }
+.combo-arrow.open { transform:translateY(-50%) rotate(180deg); color:var(--green); }
+.combo-dropdown { position:absolute; top:calc(100% + 6px); left:0; right:0; background:var(--card); border:2px solid var(--border); border-radius:var(--rs); z-index:100; overflow:hidden; display:none; box-shadow:0 8px 24px rgba(0,0,0,0.4); max-height:220px; overflow-y:auto; }
+.combo-dropdown.open { display:block; }
+.combo-option { padding:11px 14px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.1s; color:var(--text); }
+.combo-option:hover { background:var(--hover); }
+.combo-option .tbadge { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2px 8px; font-size:10px; color:var(--blue); font-weight:800; flex-shrink:0; }
+.combo-option.new-opt { color:var(--green); border-top:1px solid var(--border); font-style:italic; }
+.combo-empty { padding:12px 14px; font-size:13px; color:var(--muted); font-weight:600; }
+
+textarea { width:100%; background:var(--card); border:2px solid var(--border); border-radius:var(--rs); padding:12px 14px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; outline:none; resize:none; min-height:110px; line-height:1.5; transition:border-color 0.15s; }
+textarea:focus { border-color:var(--blue); }
+textarea::placeholder { color:var(--muted); }
+.textarea-wrap { position:relative; }
+.char-counter { position:absolute; bottom:10px; right:12px; font-size:11px; font-weight:800; color:var(--muted); transition:color 0.2s; }
+.char-counter.warn { color:var(--yellow); } .char-counter.danger { color:var(--red); }
+.char-bar-wrap { height:4px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden; }
+.char-bar { height:100%; border-radius:4px; background:var(--green); transition:width 0.2s,background 0.2s; }
+
+.btn-save { width:100%; padding:14px; background:var(--green); color:#1a1a1a; border:none; border-radius:var(--rs); font-family:'Nunito',sans-serif; font-size:16px; font-weight:900; cursor:pointer; box-shadow:0 4px 0 var(--green-dark); transition:all 0.1s; margin-top:4px; }
+.btn-save:hover { background:#63d400; }
+.btn-save:active { transform:translateY(3px); box-shadow:0 1px 0 var(--green-dark); }
+
+.toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green); color:#1a1a1a; padding:12px 22px; border-radius:40px; font-weight:800; font-size:14px; transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index:999; pointer-events:none; white-space:nowrap; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+.history-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+.history-title { font-size:13px; font-weight:800; color:var(--muted); letter-spacing:0.6px; text-transform:uppercase; }
+.tcount { background:var(--card); border:1px solid var(--border); color:var(--blue); font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; }
+.export-buttons { display:flex; gap:8px; align-items:center; }
+.btn-icon { background:var(--card); border:2px solid var(--border); border-radius:var(--rs); color:var(--text); font-size:18px; cursor:pointer; transition:all 0.15s; width:36px; height:36px; display:flex; align-items:center; justify-content:center; }
+.btn-icon:hover { background:var(--hover); border-color:var(--green); transform:scale(1.05); }
+.btn-icon:active { transform:scale(0.95); }
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-state .icon { font-size:48px; margin-bottom:12px; }
+.empty-state p { font-weight:700; font-size:15px; }
+.empty-state span { font-size:13px; font-weight:600; opacity:0.7; }
+
+/* THREAD CARDS */
+.thread-card { background:var(--surface); border:2px solid var(--border); border-radius:var(--r); margin-bottom:12px; overflow:hidden; transition:border-color 0.15s; }
+.thread-card:hover { border-color:var(--blue); }
+.thread-card.open { border-color:var(--green); }
+
+.thread-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; gap:10px; user-select:none; }
+.thread-head-left { flex:1; min-width:0; }
+.thread-name { font-size:15px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.thread-meta { display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap; }
+.thread-pill { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:2px 10px; font-size:10px; font-weight:800; color:var(--blue); }
+.thread-latest { font-size:11px; font-weight:600; color:var(--muted); }
+.thread-chevron { font-size:18px; color:var(--muted); transition:transform 0.2s; flex-shrink:0; }
+.thread-card.open .thread-chevron { transform:rotate(180deg); color:var(--green); }
+
+.thread-body { max-height:0; overflow:hidden; transition:max-height 0.35s ease; }
+.thread-card.open .thread-body { max-height:3000px; }
+
+.entry { border-top:1px solid var(--border); padding:12px 40px 12px 16px; position:relative; }
+.entry-time { font-size:11px; font-weight:700; color:var(--muted); margin-bottom:5px; display:flex; align-items:center; gap:6px; }
+.entry-time::before { content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.entry-text { font-size:14px; font-weight:600; line-height:1.6; opacity:0.9; }
+.entry-del { position:absolute; top:10px; right:12px; background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:3px 6px; border-radius:6px; transition:color 0.15s,background 0.15s; }
+.entry-del:hover { color:var(--red); background:rgba(255,75,75,0.1); }
+
+.thread-add-btn { width:100%; padding:10px 16px; background:none; border:none; border-top:1px solid var(--border); color:var(--green); font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; cursor:pointer; text-align:left; transition:background 0.15s; display:flex; align-items:center; gap:6px; }
+.thread-add-btn:hover { background:rgba(88,204,2,0.07); }
+
+/* Edit button */
+.entry-edit { position:absolute; top:10px; right:36px; background:none; border:none; cursor:pointer; color:var(--muted); font-size:13px; padding:3px 6px; border-radius:6px; transition:color 0.15s,background 0.15s; }
+.entry-edit:hover { color:var(--blue); background:rgba(28,176,246,0.1); }
+
+/* Edit modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.hidden { display:none; }
+.modal-box { background:var(--surface); border:2px solid var(--border); border-radius:var(--r); padding:22px; width:100%; max-width:480px; }
+.modal-box h3 { font-size:15px; font-weight:900; margin-bottom:14px; color:var(--blue); }
+.modal-box textarea { width:100%; background:var(--card); border:2px solid var(--border); border-radius:var(--rs); padding:12px 14px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; outline:none; resize:none; min-height:110px; line-height:1.5; }
+.modal-box textarea:focus { border-color:var(--blue); }
+.modal-actions { display:flex; gap:10px; margin-top:14px; }
+.btn-modal-save { flex:1; padding:11px; background:var(--green); color:#1a1a1a; border:none; border-radius:var(--rs); font-family:'Nunito',sans-serif; font-size:14px; font-weight:900; cursor:pointer; box-shadow:0 3px 0 var(--green-dark); }
+.btn-modal-save:hover { background:#63d400; }
+.btn-modal-cancel { padding:11px 18px; background:var(--card); color:var(--muted); border:2px solid var(--border); border-radius:var(--rs); font-family:'Nunito',sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
+.btn-modal-cancel:hover { background:var(--hover); color:var(--text); }
+
+/* Search bar */
+.search-wrap { position:relative; margin-bottom:14px; }
+.search-input { width:100%; background:var(--surface); border:2px solid var(--border); border-radius:var(--rs); padding:10px 14px 10px 38px; color:var(--text); font-family:'Nunito',sans-serif; font-size:14px; font-weight:600; outline:none; transition:border-color 0.15s; }
+.search-input:focus { border-color:var(--blue); }
+.search-input::placeholder { color:var(--muted); }
+.search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:15px; pointer-events:none; }
+
+/* Google Drive button */
+.btn-gdrive { background:var(--card); border:2px solid var(--border); border-radius:var(--rs); color:var(--text); font-size:15px; cursor:pointer; transition:all 0.15s; width:36px; height:36px; display:flex; align-items:center; justify-content:center; }
+.btn-gdrive:hover { background:var(--hover); border-color:#4285f4; transform:scale(1.05); }
+.btn-gdrive.connected { border-color:#4285f4; color:#4285f4; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">💭</div>
+  <h1>O<span>moi</span></h1>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-record" onclick="switchTab('record',this)">✏️ Record</button>
+  <button class="tab" id="tab-history" onclick="switchTab('history',this)">📜 Threads</button>
+</div>
+
+<div class="main">
+
+  <!-- RECORD PANEL -->
+  <div class="panel active" id="panel-record">
+    <div class="form-card">
+      <div class="datetime-badge"><span class="dot"></span><span id="live-dt">--</span></div>
+
+      <div class="field-group">
+        <label>Thread — pick existing or type new</label>
+        <div class="combo-wrap" id="combo-wrap">
+          <input class="combo-input" id="title-input" type="text"
+            placeholder="e.g. Morning reflections…" maxlength="80" autocomplete="off"
+            oninput="onTitleInput()" onfocus="openDd()" onkeydown="onTitleKey(event)">
+          <span class="combo-arrow" id="combo-arrow" onclick="toggleDd()">▾</span>
+          <div class="combo-dropdown" id="dd"></div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Thought &nbsp;<span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">(300 chars max)</span></label>
+        <div class="textarea-wrap">
+          <textarea id="note-input" placeholder="Write your thought here…" maxlength="300" oninput="updateCounter()"></textarea>
+          <span class="char-counter" id="counter">0/300</span>
+        </div>
+        <div class="char-bar-wrap"><div class="char-bar" id="char-bar" style="width:0%"></div></div>
+      </div>
+
+      <button class="btn-save" onclick="saveNote()">Drop It 🟢</button>
+    </div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div class="panel" id="panel-history">
+    <div class="history-header">
+      <span class="history-title">All Threads</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="tcount" id="tcount">0 threads</span>
+      </div>
+    </div>
+    <!-- Search + export row -->
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+      <div class="search-wrap" style="flex:1;margin-bottom:0;">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="search-input" type="text" placeholder="Search title, note, date…" oninput="renderHistory()" autocomplete="off">
+      </div>
+      <button class="btn-icon" onclick="exportToWord()" title="Export to Word">📄</button>
+      <button class="btn-icon" onclick="exportToExcel()" title="Export to Excel">📊</button>
+      <button class="btn-gdrive" id="gdrive-btn" onclick="gdriveAction()" title="Google Drive Backup">☁️</button>
+    </div>
+    <div id="threads-list"></div>
+  </div>
+
+</div>
+
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal-box">
+    <h3>✏️ Edit Note</h3>
+    <textarea id="edit-textarea" maxlength="300"></textarea>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script>
+const TZ = 'Asia/Karachi', MAX = 300;
+let notes = [];
+try { notes = JSON.parse(localStorage.getItem('td2_notes') || '[]'); } catch(e) {}
+
+// ── Clock ──
+function updateClock() {
+  document.getElementById('live-dt').textContent = new Intl.DateTimeFormat('en-US',{
+    timeZone:TZ,weekday:'short',month:'short',day:'numeric',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true
+  }).format(new Date());
+}
+setInterval(updateClock, 1000); updateClock();
+
+function nowPKT() {
+  const d = new Date();
+  return {
+    date: new Intl.DateTimeFormat('en-US',{timeZone:TZ,year:'numeric',month:'long',day:'numeric'}).format(d),
+    time: new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hour12:true}).format(d)
+  };
+}
+
+// ── Thread grouping ──
+function getThreads() {
+  const map = new Map();
+  notes.forEach(n => {
+    const key = n.title.trim().toLowerCase();
+    if (!map.has(key)) map.set(key, { title: n.title.trim(), entries: [] });
+    map.get(key).entries.push(n);
+  });
+  return Array.from(map.values()).sort((a,b) => b.entries[0].id - a.entries[0].id);
+}
+
+// ── Dropdown ──
+let ddOpen = false;
+
+function buildDd() {
+  const filter = document.getElementById('title-input').value.trim().toLowerCase();
+  const threads = getThreads();
+  const matched = filter ? threads.filter(t => t.title.toLowerCase().includes(filter)) : threads;
+  const val = document.getElementById('title-input').value.trim();
+  const exactMatch = threads.some(t => t.title.toLowerCase() === val.toLowerCase());
+
+  let html = '';
+  matched.forEach(t => {
+    html += `<div class="combo-option" onclick="pickThread('${escapeHtml(t.title).replace(/'/g, "\\'")}'); return false;">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(t.title)}</span>
+      <span class="tbadge">${t.entries.length} note${t.entries.length!==1?'s':''}</span>
+    </div>`;
+  });
+
+  if (val && !exactMatch) {
+    html += `<div class="combo-option new-opt" onclick="pickThread('${escapeHtml(val).replace(/'/g, "\\'")}'); return false;">＋ New: "${escapeHtml(val)}"</div>`;
+  }
+  if (!html) html = `<div class="combo-empty">Type to create your first thread</div>`;
+  document.getElementById('dd').innerHTML = html;
+}
+
+function openDd() { buildDd(); document.getElementById('dd').classList.add('open'); document.getElementById('combo-arrow').classList.add('open'); ddOpen=true; }
+function closeDd() { document.getElementById('dd').classList.remove('open'); document.getElementById('combo-arrow').classList.remove('open'); ddOpen=false; }
+function toggleDd() { ddOpen ? closeDd() : openDd(); }
+function onTitleInput() { buildDd(); if(!ddOpen) openDd(); }
+function onTitleKey(e) { if(e.key==='Escape') closeDd(); if(e.key==='Enter'){e.preventDefault();closeDd();document.getElementById('note-input').focus();} }
+function pickThread(title) { 
+  document.getElementById('title-input').value = title; 
+  closeDd(); 
+  setTimeout(()=>document.getElementById('note-input').focus(),50);
+}
+document.addEventListener('click', e => { if(!document.getElementById('combo-wrap').contains(e.target)) closeDd(); });
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Counter ──
+function updateCounter() {
+  const n = document.getElementById('note-input').value.length;
+  const pct = (n/MAX)*100;
+  const c = document.getElementById('counter');
+  c.textContent = `${n}/${MAX}`;
+  c.className = 'char-counter'+(pct>=90?' danger':pct>=70?' warn':'');
+  const b = document.getElementById('char-bar');
+  b.style.width = pct+'%';
+  b.style.background = pct>=90?'var(--red)':pct>=70?'var(--yellow)':'var(--green)';
+}
+
+// ── Save ──
+function saveNote() {
+  const title = document.getElementById('title-input').value.trim();
+  const body  = document.getElementById('note-input').value.trim();
+  if (!title) { openDd(); return toast('Choose or name a thread!', false); }
+  if (!body)  return toast('Write something first!', false);
+  const {date,time} = nowPKT();
+  notes.unshift({id:Date.now(), title, body, date, time});
+  persist();
+  document.getElementById('title-input').value = '';
+  document.getElementById('note-input').value = '';
+  updateCounter();
+  toast(`Dropped into "${title}" 🟢`);
+}
+
+// ── Jump to record with thread pre-filled ──
+function addToThread(title, e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  const decodedTitle = title ? title.replace(/\\'/g, "'") : '';
+  if (!decodedTitle) return;
+  document.getElementById('title-input').value = decodedTitle;
+  document.getElementById('note-input').value = '';
+  updateCounter();
+  switchTab('record', document.getElementById('tab-record'));
+  setTimeout(() => document.getElementById('note-input').focus(), 150);
+}
+
+// ── Tabs ──
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='history') renderHistory();
+}
+
+// ── Render ──
+function renderHistory() {
+  const list = document.getElementById('threads-list');
+  const searchEl = document.getElementById('search-input');
+  const query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  let threads = getThreads();
+
+  if (query) {
+    threads = threads.map(t => {
+      const titleMatch = t.title.toLowerCase().includes(query);
+      const filteredEntries = t.entries.filter(e =>
+        e.body.toLowerCase().includes(query) ||
+        e.date.toLowerCase().includes(query) ||
+        e.time.toLowerCase().includes(query) ||
+        t.title.toLowerCase().includes(query)
+      );
+      if (titleMatch) return t; // show all entries if title matches
+      if (filteredEntries.length) return {...t, entries: filteredEntries};
+      return null;
+    }).filter(Boolean);
+  }
+
+  document.getElementById('tcount').textContent = threads.length+(threads.length===1?' thread':' threads');
+
+  if(!threads.length) {
+    list.innerHTML = query
+      ? `<div class="empty-state"><div class="icon">🔍</div><p>No results for "${escapeHtml(query)}"</p></div>`
+      : `<div class="empty-state"><div class="icon">🌱</div><p>No threads yet</p><span>Start recording your thoughts!</span></div>`;
+    return;
+  }
+
+  list.innerHTML = threads.map(t => {
+    const safeId = 'th-'+btoa(unescape(encodeURIComponent(t.title))).replace(/[^a-zA-Z0-9]/g,'').slice(0,20)+'-'+t.entries[0].id;
+    const entries = t.entries.map(e => `
+      <div class="entry">
+        <div class="entry-time">${escapeHtml(e.date)} · ${escapeHtml(e.time)} PKT</div>
+        <div class="entry-text">${escapeHtml(e.body)}</div>
+        <button class="entry-edit" onclick="openEditModal(event,${e.id})" title="Edit">✏️</button>
+        <button class="entry-del" onclick="delEntry(event,${e.id})" title="Delete">✕</button>
+      </div>`).join('');
+    return `
+      <div class="thread-card" id="${safeId}">
+        <div class="thread-head" onclick="toggleThread('${safeId}')">
+          <div class="thread-head-left">
+            <div class="thread-name">${escapeHtml(t.title)}</div>
+            <div class="thread-meta">
+              <span class="thread-pill">${t.entries.length} note${t.entries.length!==1?'s':''}</span>
+              <span class="thread-latest">Last: ${t.entries[0].date}, ${t.entries[0].time}</span>
+            </div>
+          </div>
+          <div class="thread-chevron">▾</div>
+        </div>
+        <div class="thread-body">
+          ${entries}
+        <button class="thread-add-btn" data-title="${escapeHtml(t.title.replace(/'/g, "\\'"))}" onclick="addToThread(this.getAttribute('data-title'), event)">＋ Add note to this thread</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleThread(id) { document.getElementById(id).classList.toggle('open'); }
+
+function delEntry(e, id) {
+  e.stopPropagation();
+  notes = notes.filter(n=>n.id!==id);
+  persist();
+  renderHistory();
+  toast('Note deleted 🗑️');
+}
+
+// ── Export to Word (DOCX) ──
+function exportToWord() {
+  if(!notes.length) return toast('Nothing to export yet!', false);
+  
+  const threads = getThreads();
+  const expTime = new Intl.DateTimeFormat('en-US',{timeZone:TZ,dateStyle:'full',timeStyle:'short'}).format(new Date());
+  
+  let htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Omoi Export</title>
+<style>
+  body {
+    font-family: 'Segoe UI', 'Nunito', Arial, sans-serif;
+    margin: 40px;
+    line-height: 1.6;
+    color: #333;
+  }
+  h1 {
+    color: #58cc02;
+    font-size: 28px;
+    margin-bottom: 5px;
+  }
+  .subtitle {
+    color: #666;
+    border-bottom: 2px solid #58cc02;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+  .export-info {
+    color: #999;
+    font-size: 11px;
+    margin-bottom: 30px;
+  }
+  .thread {
+    margin-bottom: 40px;
+    page-break-inside: avoid;
+  }
+  .thread-title {
+    font-size: 20px;
+    color: #1cb0f6;
+    border-left: 4px solid #58cc02;
+    padding-left: 12px;
+    margin-bottom: 10px;
+    margin-top: 20px;
+  }
+  .thread-stats {
+    color: #666;
+    font-size: 11px;
+    margin-bottom: 15px;
+    margin-left: 16px;
+  }
+  .entry {
+    margin-bottom: 20px;
+    margin-left: 20px;
+    padding-left: 15px;
+    border-left: 2px solid #e0e0e0;
+  }
+  .entry-date {
+    font-size: 11px;
+    color: #58cc02;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  .entry-text {
+    font-size: 13px;
+    color: #444;
+  }
+  hr {
+    margin: 30px 0;
+    border: none;
+    border-top: 1px solid #ddd;
+  }
+  .footer {
+    text-align: center;
+    color: #999;
+    font-size: 10px;
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+</style>
+</head>
+<body>
+<h1>💭 Omoi</h1>
+<div class="subtitle">My Thought Threads</div>
+<div class="export-info">Exported: ${escapeHtml(expTime)} PKT</div>`;
+  
+  threads.forEach(t => {
+    htmlContent += `
+<div class="thread">
+  <div class="thread-title">${escapeHtml(t.title)}</div>
+  <div class="thread-stats">📝 ${t.entries.length} note${t.entries.length !== 1 ? 's' : ''}</div>`;
+    
+    t.entries.forEach(e => {
+      htmlContent += `
+  <div class="entry">
+    <div class="entry-date">📅 ${escapeHtml(e.date)} · ${escapeHtml(e.time)} PKT</div>
+    <div class="entry-text">${escapeHtml(e.body)}</div>
+  </div>`;
+    });
+    
+    htmlContent += `\n</div>`;
+  });
+  
+  htmlContent += `
+<div class="footer">
+  Generated by Omoi — Keep your thoughts organized!
+</div>
+</body>
+</html>`;
+  
+  const blob = new Blob([htmlContent], {type: 'application/msword'});
+  saveAs(blob, `thoughtdrop-export-${new Date().toISOString().slice(0,10)}.doc`);
+  toast('Word document exported successfully ✅');
+}
+
+// ── Export to Excel ──
+function exportToExcel() {
+  if(!notes.length) return toast('Nothing to export yet!', false);
+  
+  const threads = getThreads();
+  const excelData = [];
+  
+  // Add header
+  excelData.push(['Thread', 'Date', 'Time', 'Note', 'Note ID']);
+  
+  // Add all notes
+  threads.forEach(thread => {
+    thread.entries.forEach(entry => {
+      excelData.push([
+        thread.title,
+        entry.date,
+        entry.time,
+        entry.body,
+        entry.id.toString()
+      ]);
+    });
+  });
+  
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(excelData);
+  
+  // Style the worksheet
+  ws['!cols'] = [
+    {wch: 25}, // Thread column width
+    {wch: 20}, // Date column width
+    {wch: 15}, // Time column width
+    {wch: 50}, // Note column width
+    {wch: 15}  // ID column width
+  ];
+  
+  // Add summary sheet with statistics
+  const summaryData = [
+    ['Omoi Export Summary'],
+    [''],
+    ['Export Date:', new Intl.DateTimeFormat('en-US', {timeZone: TZ, dateStyle: 'full', timeStyle: 'short'}).format(new Date())],
+    ['Total Threads:', threads.length],
+    ['Total Notes:', notes.length],
+    [''],
+    ['Thread Summary:'],
+    ['Thread Name', 'Number of Notes', 'Latest Note Date']
+  ];
+  
+  threads.forEach(thread => {
+    const latestDate = thread.entries[0].date;
+    summaryData.push([thread.title, thread.entries.length, latestDate]);
+  });
+  
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  wsSummary['!cols'] = [{wch: 30}, {wch: 15}, {wch: 25}];
+  
+  // Create workbook with multiple sheets
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'All Notes');
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+  
+  // Export
+  XLSX.writeFile(wb, `thoughtdrop-export-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel file exported successfully ✅');
+}
+
+// ── Edit modal ──
+let editingId = null;
+function openEditModal(e, id) {
+  e.stopPropagation();
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  editingId = id;
+  document.getElementById('edit-textarea').value = note.body;
+  document.getElementById('edit-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('edit-textarea').focus(), 50);
+}
+function closeEditModal() {
+  editingId = null;
+  document.getElementById('edit-modal').classList.add('hidden');
+}
+function saveEdit() {
+  const newBody = document.getElementById('edit-textarea').value.trim();
+  if (!newBody) return toast('Note cannot be empty!', false);
+  const note = notes.find(n => n.id === editingId);
+  if (note) { note.body = newBody; persist(); renderHistory(); toast('Note updated ✅'); }
+  closeEditModal();
+}
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+// ── Google Drive Backup ──
+const GDRIVE_CLIENT_ID = '1079079471790-em60v46qo6etfj4fqmtgs8gbfo9b8tpo.apps.googleusercontent.com';
+const GDRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const GDRIVE_REDIRECT = 'https://khizarlatif.github.io/Omoi/';
+const GDRIVE_FILE_NAME = 'omoi-backup.json';
+let gdriveToken = localStorage.getItem('gdrive_token') || null;
+
+// Handle OAuth redirect — token comes back in URL hash
+(function() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.replace('#',''));
+    const token = params.get('access_token');
+    if (token) {
+      gdriveToken = token;
+      localStorage.setItem('gdrive_token', token);
+      window.location.hash = '';
+      document.getElementById('gdrive-btn').classList.add('connected');
+      setTimeout(() => { toast('Google Drive connected ✅'); showGdriveMenu(); }, 400);
+    }
+  } else if (gdriveToken) {
+    document.getElementById('gdrive-btn').classList.add('connected');
+  }
+})();
+
+function gdriveAction() {
+  if (!gdriveToken) {
+    const url = `https://accounts.google.com/o/oauth2/v2/auth`
+      + `?client_id=${GDRIVE_CLIENT_ID}`
+      + `&redirect_uri=${encodeURIComponent(GDRIVE_REDIRECT)}`
+      + `&response_type=token`
+      + `&scope=${encodeURIComponent(GDRIVE_SCOPE)}`;
+    window.location.href = url;
+  } else {
+    showGdriveMenu();
+  }
+}
+
+function showGdriveMenu() {
+  const existing = document.getElementById('gdrive-menu');
+  if (existing) { existing.remove(); return; }
+  const menu = document.createElement('div');
+  menu.id = 'gdrive-menu';
+  menu.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:2px solid #4285f4;border-radius:16px;padding:22px;z-index:600;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+  menu.innerHTML = `
+    <button onclick="document.getElementById('gdrive-menu').remove()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">✕</button>
+    <div style="font-size:15px;font-weight:900;color:#4285f4;margin-bottom:16px;">☁️ Google Drive</div>
+    <button onclick="gdriveBackup()" style="width:100%;padding:12px;background:var(--green);color:#1a1a1a;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:10px;">⬆️ Backup to Drive</button>
+    <button onclick="gdriveRestore()" style="width:100%;padding:12px;background:var(--card);color:var(--text);border:2px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px;">⬇️ Restore from Drive</button>
+    <button onclick="gdriveSignOut()" style="width:100%;padding:10px;background:none;color:var(--muted);border:none;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Sign Out</button>
+  `;
+  document.body.appendChild(menu);
+}
+
+async function gdriveBackup() {
+  document.getElementById('gdrive-menu')?.remove();
+  toast('Backing up…');
+  try {
+    const data = JSON.stringify(notes);
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D'${GDRIVE_FILE_NAME}'`, {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    if (searchRes.status === 401) { gdriveSignOut(); return toast('Session expired, please reconnect ☁️', false); }
+    const searchJson = await searchRes.json();
+    const existing = searchJson.files && searchJson.files[0];
+    if (existing) {
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + gdriveToken, 'Content-Type': 'application/json' },
+        body: data
+      });
+    } else {
+      const meta = JSON.stringify({ name: GDRIVE_FILE_NAME, parents: ['appDataFolder'] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file', new Blob([data], { type: 'application/json' }));
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + gdriveToken },
+        body: form
+      });
+    }
+    toast('Backed up to Google Drive ✅');
+  } catch(err) { toast('Backup failed ❌', false); }
+}
+
+async function gdriveRestore() {
+  document.getElementById('gdrive-menu')?.remove();
+  toast('Restoring…');
+  try {
+    const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D'${GDRIVE_FILE_NAME}'`, {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    if (searchRes.status === 401) { gdriveSignOut(); return toast('Session expired, please reconnect ☁️', false); }
+    const searchJson = await searchRes.json();
+    const file = searchJson.files && searchJson.files[0];
+    if (!file) return toast('No backup found on Drive', false);
+    const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+      headers: { Authorization: 'Bearer ' + gdriveToken }
+    });
+    const restored = await fileRes.json();
+    if (Array.isArray(restored)) {
+      notes = restored; persist(); renderHistory();
+      toast(`Restored ${notes.length} notes ✅`);
+    } else { toast('Invalid backup ❌', false); }
+  } catch(err) { toast('Restore failed ❌', false); }
+}
+
+function gdriveSignOut() {
+  gdriveToken = null;
+  localStorage.removeItem('gdrive_token');
+  document.getElementById('gdrive-btn').classList.remove('connected');
+  document.getElementById('gdrive-menu')?.remove();
+  toast('Signed out of Google Drive');
+}
+
+// ── Utils ──
+function persist() { localStorage.setItem('td2_notes', JSON.stringify(notes)); }
+
+let toastT;
+function toast(msg, ok=true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; 
+  el.style.background = ok?'var(--green)':'var(--red)'; 
+  el.style.color = ok?'#1a1a1a':'#fff';
+  el.classList.add('show'); 
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+// Initialize on page load
+renderHistory();
+</script>
+</body>
+</html>
