@@ -170,10 +170,10 @@ textarea::placeholder { color:var(--muted); }
       </div>
 
       <div class="field-group">
-        <label>Thought &nbsp;<span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">(300 chars max)</span></label>
+        <label>Thought &nbsp;<span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0">(500 chars max)</span></label>
         <div class="textarea-wrap">
-          <textarea id="note-input" placeholder="Write your thought here…" maxlength="300" oninput="updateCounter()"></textarea>
-          <span class="char-counter" id="counter">0/300</span>
+          <textarea id="note-input" placeholder="Write your thought here…" maxlength="500" oninput="updateCounter()"></textarea>
+          
         </div>
         <div class="char-bar-wrap"><div class="char-bar" id="char-bar" style="width:0%"></div></div>
       </div>
@@ -208,7 +208,7 @@ textarea::placeholder { color:var(--muted); }
 <div class="modal-overlay hidden" id="edit-modal">
   <div class="modal-box">
     <h3>✏️ Edit Note</h3>
-    <textarea id="edit-textarea" maxlength="300"></textarea>
+    <textarea id="edit-textarea" maxlength="500"></textarea>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
       <button class="btn-modal-save" onclick="saveEdit()">Save Changes</button>
@@ -220,7 +220,7 @@ textarea::placeholder { color:var(--muted); }
 
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script>
-const TZ = 'Asia/Karachi', MAX = 300;
+const TZ = 'Asia/Karachi', MAX = 500;
 let notes = [];
 try { notes = JSON.parse(localStorage.getItem('td2_notes') || '[]'); } catch(e) {}
 
@@ -297,9 +297,7 @@ function escapeHtml(str) {
 function updateCounter() {
   const n = document.getElementById('note-input').value.length;
   const pct = (n/MAX)*100;
-  const c = document.getElementById('counter');
-  c.textContent = `${n}/${MAX}`;
-  c.className = 'char-counter'+(pct>=90?' danger':pct>=70?' warn':'');
+  
   const b = document.getElementById('char-bar');
   b.style.width = pct+'%';
   b.style.background = pct>=90?'var(--red)':pct>=70?'var(--yellow)':'var(--green)';
