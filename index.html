@@ -1,0 +1,2981 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Omoi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    :root {
+      /* MEXT theme colors */
+      --bg: #131f24;
+      --surface: #1b2a30;
+      --surface-solid: #1b2a30;
+      --card: #23343b;
+      --card-hover: #29393f;
+      --card-solid: #23343b;
+      --hover: #29393f;
+      --text: #ffffff;
+      --text-light: #d1e2e9;
+      --muted: #8ea7b0;
+      --border-color: #37464e;
+      --border-color-hover: #556c78;
+      --border: 1px solid var(--border-color);
+      --border-hover: #556c78;
+      --r: 16px;
+      --rs: 12px;
+
+      /* Duolingo / MEXT palette */
+      --green: #58cc02;
+      --green-dark: #4baf02;
+      --green-bright: #00e676;
+      --green-shadow: rgba(0, 230, 118, 0.25);
+      --green-text: #031c0c;
+      --green-faded: rgba(88, 204, 2, 0.15);
+      --green-faded-hover: rgba(88, 204, 2, 0.25);
+      --green-faded-border: rgba(88, 204, 2, 0.4);
+
+      --blue: #1cb0f6;
+      --blue-dark: #1899d6;
+      --blue-bright: #00a2ff;
+      --blue-shadow: rgba(0, 162, 255, 0.25);
+      --blue-text: #ffffff;
+
+      --amber: #ffc800;
+      --amber-dark: #e5b400;
+      --gold: #ffc800;
+      --gold-bg: linear-gradient(135deg, #ffe066 0%, #ffc800 60%, #e5b400 100%);
+      --gold-text: #1a1400;
+
+      --yellow: #ffc800;
+      --yellow-shadow: rgba(255, 200, 0, 0.25);
+      --yellow-text: #1a1400;
+
+      --red: #ff4b4b;
+      --red-dark: #ea2b2b;
+      --red-shadow: rgba(255, 75, 75, 0.25);
+      --red-text: #ffffff;
+
+      --card-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      --btn-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      height: 100dvh;
+      line-height: 1.5;
+      font-size: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 840px;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 8px 16px 12px 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Centered Dashboard Header */
+    .dash-header {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2px;
+      margin-bottom: 8px;
+      text-align: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .dash-header h1 {
+      font-size: 44px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin: 0;
+      line-height: 1.1;
+    }
+    .dash-header h1 span { color: var(--green); }
+    .dash-subtitle {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.2px;
+    }
+
+    @media (max-width: 680px) {
+      .container {
+        padding: 6px 10px 8px 10px;
+      }
+      .dash-header {
+        margin-bottom: 6px;
+      }
+      .dash-header h1 {
+        font-size: 32px;
+      }
+      .dash-subtitle {
+        font-size: 12px;
+      }
+      .journal-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+      }
+      .journal-toolbar .search-wrap {
+        width: 100% !important;
+        flex: none !important;
+      }
+      .journal-filters {
+        display: flex !important;
+        gap: 8px !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+      }
+      .journal-filter-btn {
+        flex: 1 !important;
+        width: auto !important;
+        height: 40px !important;
+      }
+    }
+
+    /* The Main Big Box */
+    .big-box {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    .panel.active {
+      display: flex;
+    }
+
+    /* Inputs & Form Controls */
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      background: var(--bg);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      font-family: inherit;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-sizing: border-box;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    textarea:focus {
+      border-color: #00a2ff;
+      box-shadow: 0 0 0 2px rgba(0, 162, 255, 0.2);
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    /* Button Styles */
+    .btn-primary {
+      background: var(--card);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 18px;
+      height: 38px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+      user-select: none;
+    }
+    .btn-primary:hover {
+      background: var(--hover);
+      border-color: var(--border-color-hover);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-outline {
+      background: var(--card);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 38px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      user-select: none;
+    }
+    .btn-outline:hover {
+      background: var(--hover);
+      border-color: var(--border-color-hover);
+      transform: translateY(-1px);
+    }
+    .btn-outline:active {
+      transform: translateY(0);
+    }
+
+    .btn-duo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .btn-card {
+      background: var(--card);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+    }
+    .btn-card:hover {
+      background: var(--hover);
+      border-color: var(--border-color-hover);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .btn-ghost:hover {
+      color: var(--text);
+    }
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+      height: 28px;
+    }
+
+    /* ===== NOTE THREADS INPUT SYSTEM ===== */
+    .inline-dropdown-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      max-height: 180px;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      z-index: 300;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .dropdown-item {
+      padding: 9px 12px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+    .dropdown-item:hover {
+      background: var(--hover);
+    }
+    .dropdown-item.add-new-hint {
+      color: var(--gold);
+    }
+
+    .note-threads-row {
+      min-height: 36px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0 10px;
+      margin-top: 5px;
+    }
+    .note-threads-row:empty::before {
+      content: 'No threads';
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      font-style: italic;
+    }
+    .note-thread-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--gold-bg);
+      color: var(--gold-text);
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin: 4px 0;
+      user-select: none;
+    }
+    .note-thread-pill.readonly {
+      background: rgba(255, 200, 0, 0.12);
+      color: var(--gold);
+      border: 1px solid rgba(255, 200, 0, 0.35);
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .note-thread-pill.readonly:hover {
+      background: rgba(255, 200, 0, 0.22);
+      border-color: rgba(255, 200, 0, 0.6);
+    }
+    .note-thread-pill .remove {
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      opacity: 0.75;
+      line-height: 1;
+    }
+    .note-thread-pill .remove:hover {
+      opacity: 1;
+    }
+
+    /* Journal Search Toolbar */
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 14px;
+      pointer-events: none;
+      color: var(--muted);
+      z-index: 2;
+    }
+    .search-input {
+      width: 100% !important;
+      height: 40px !important;
+      background: var(--card) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 10px !important;
+      color: var(--text) !important;
+      font-family: inherit !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      padding: 0 12px 0 38px !important;
+      outline: none !important;
+      box-sizing: border-box !important;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+    .search-input:focus {
+      border-color: #00a2ff !important;
+      box-shadow: 0 0 0 2px rgba(0, 162, 255, 0.2) !important;
+    }
+    .search-input::placeholder {
+      color: var(--muted) !important;
+    }
+    .journal-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .journal-toolbar .search-wrap {
+      flex: 1;
+      margin-bottom: 0;
+      min-width: 0;
+    }
+    .journal-filters {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .journal-filter-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ===== JOURNAL & THREADS (Modeled after 10.html) ===== */
+    #journal-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding-right: 2px;
+    }
+    .journal-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      transition: border-color 0.15s ease;
+      position: relative;
+    }
+    .journal-card:hover {
+      border-color: var(--blue);
+    }
+    .journal-card.open {
+      border-color: var(--green);
+    }
+    .journal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 15px;
+      cursor: pointer;
+      gap: 10px;
+      user-select: none;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      border-radius: 11px;
+      transition: background 0.15s ease;
+    }
+    .journal-head:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .journal-card.open .journal-head {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--surface);
+      border-top-left-radius: 11px;
+      border-top-right-radius: 11px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+    .card-header-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    .card-header-main > div {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    .journal-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-header-actions {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .journal-card.open .card-header-actions {
+      display: flex;
+    }
+    .card-chevron,
+    .chevron {
+      font-size: 18px;
+      color: var(--muted);
+      transition: transform 0.2s ease, color 0.2s ease;
+      flex-shrink: 0;
+    }
+    .journal-card.open .card-chevron,
+    .journal-card.open .chevron {
+      transform: rotate(180deg);
+      color: var(--green);
+    }
+    .journal-body {
+      display: none;
+      padding: 10px 12px 12px 12px;
+      background: rgba(0, 0, 0, 0.12);
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      border-bottom-left-radius: 11px;
+      border-bottom-right-radius: 11px;
+    }
+    .journal-card.open .journal-body {
+      display: block;
+      height: auto;
+      max-height: none;
+    }
+    .journal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    /* Note Item (Both inside thread cards and in notes view) */
+    .note-item {
+      background: var(--card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--green);
+      border-radius: 10px;
+      padding: 11px 13px;
+      transition: border-color 0.15s ease;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .note-item:hover {
+      border-color: var(--border-color-hover);
+      border-left-color: var(--green-bright);
+    }
+    .note-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .note-datetime {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .note-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .note-text {
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      transition: filter 0.2s ease, opacity 0.2s ease;
+    }
+    .note-text.blurred {
+      filter: blur(5px);
+      user-select: none;
+      opacity: 0.6;
+    }
+    .note-text.revealed {
+      filter: none;
+      opacity: 1;
+    }
+
+    .note-read-more {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      color: #00e676;
+      cursor: pointer;
+      user-select: none;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      transition: color 0.15s ease;
+    }
+    .note-read-more:hover {
+      color: #58cc02;
+      text-decoration: underline;
+    }
+
+    .btn-eye {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 2px 4px;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--muted);
+      gap: 8px;
+      height: 100%;
+    }
+    .empty-state .icon {
+      font-size: 38px;
+      margin-bottom: 2px;
+    }
+    .empty-state p {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+    }
+    .empty-state span {
+      font-size: 12.5px;
+    }
+
+    /* Modal Styles */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open,
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .modal-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #142132;
+      border: 1px solid #00e676;
+      color: #ffffff;
+      padding: 9px 18px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      z-index: 2000;
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.error {
+      border-color: var(--red);
+      color: #ffffff;
+      background: #2b1114;
+    }
+
+    /* Progress Bar */
+    .progress-bar-wrap {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      z-index: 1500;
+      display: none;
+    }
+    .progress-bar-wrap.show {
+      display: block;
+    }
+    .progress-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .progress-bar-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .progress-bar-stop {
+      background: transparent;
+      border: none;
+      color: var(--red);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      padding: 0 4px;
+    }
+  </style>
+  <base target="_blank">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Centered Header -->
+    <div class="dash-header">
+      <h1><span>Omoi</span></h1>
+      <div class="dash-subtitle">Personal Journal &amp; Memory Vault</div>
+    </div>
+
+    <!-- The Big Box -->
+    <div class="big-box">
+      <main class="app-content">
+        <!-- WRITE PANEL (Default) -->
+        <div id="panel-write" class="panel active">
+          <div style="display:flex; flex-direction:column; gap:10px; height:100%; flex:1; min-height:0;">
+            <!-- Threads -->
+            <div class="field-group" style="flex-shrink:0;">
+              <span class="field-label">Threads</span>
+              <div class="inline-dropdown-wrap">
+                <input type="text" id="entry-topic" autocomplete="off" placeholder="Thread..."
+                  oninput="filterTopicDropdown()" onfocus="showTopicDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault(); addNoteThread();}" style="height:38px; width:100%;">
+                <div id="topic-dropdown" class="dropdown-menu"></div>
+              </div>
+              <div class="note-threads-row" id="note-threads-row"></div>
+            </div>
+
+            <!-- Date & Time Row -->
+            <div class="datetime-row" style="display:flex; gap:10px; flex-shrink:0;">
+              <div class="field-group" style="flex:1;">
+                <span class="field-label">Date</span>
+                <input type="date" id="entry-date" style="height:38px;">
+              </div>
+              <div class="field-group" style="flex:1;">
+                <span class="field-label">Time</span>
+                <input type="time" id="entry-time" style="height:38px;">
+              </div>
+            </div>
+
+            <!-- Note Text Field -->
+            <div class="field-group" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+              <span class="field-label">Note</span>
+              <textarea id="entry-note" style="width:100%; flex:1; min-height:80px; resize:none;" placeholder="Write..."></textarea>
+            </div>
+
+            <!-- Bottom Actions: Journal on Left, Save on Right -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+              <button type="button" class="btn-outline" onclick="switchTab('history')" title="View Journal" style="height:40px; font-size:13.5px; padding:0 18px;">📜 Journal</button>
+              <button type="button" class="btn-outline" onclick="saveJournalEntry()" title="Save Note" style="height:40px; font-size:13.5px; padding:0 24px;">💾 Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- JOURNAL PANEL (Thread Cards View) -->
+        <div id="panel-history" class="panel">
+          <div class="journal-toolbar-wrap" style="flex-shrink:0; background:var(--surface); padding-bottom:8px; margin-bottom:4px;">
+            <div class="journal-toolbar">
+              <div class="search-wrap">
+                <span class="search-icon">🔍</span>
+                <input class="search-input" id="journal-search" placeholder="Search..." oninput="updateJournalSearchQuery()">
+              </div>
+              <div id="journal-filters" class="journal-filters"></div>
+            </div>
+          </div>
+          <!-- Thread Cards List -->
+          <div id="journal-list" style="display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; width:100%; max-width:100%; box-sizing:border-box; padding-right:2px;"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- BACKUP & SYNC MODAL (5 Buttons) -->
+  <div id="backupModal" class="modal-backdrop" onclick="if(event.target===this) closeBackupModal()">
+    <div class="modal-card" style="max-width:420px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="modal-title" style="margin:0;">💾 Backup &amp; Sync</div>
+        <button type="button" class="btn-ghost" onclick="closeBackupModal()" style="font-size:18px; padding:4px;" title="Close">✕</button>
+      </div>
+      <div class="modal-sub" style="margin-bottom:14px;">Sync with Google Drive or manage local backup files.</div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <!-- 1. Sync Drive -->
+        <button type="button" class="btn-outline" onclick="backupToDrive(); closeBackupModal();" style="height:42px; font-size:14px; width:100%;">
+          ☁️ Sync Drive
+        </button>
+
+        <!-- 2. JSON Import & 3. JSON Export -->
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-outline" onclick="importAll()" style="flex:1; height:40px; font-size:13px;" title="Import notes from JSON">
+            📥 JSON Import
+          </button>
+          <button type="button" class="btn-outline" onclick="exportAll()" style="flex:1; height:40px; font-size:13px;" title="Export notes to JSON">
+            📤 JSON Export
+          </button>
+        </div>
+
+        <!-- 4. CSV Import & 5. CSV Export -->
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-outline" onclick="importCSV()" style="flex:1; height:40px; font-size:13px;" title="Import notes from CSV">
+            📥 CSV Import
+          </button>
+          <button type="button" class="btn-outline" onclick="exportCSV()" style="flex:1; height:40px; font-size:13px;" title="Export notes to CSV">
+            📤 CSV Export
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREAD EXPORT MODAL (JSON / CSV) -->
+  <div id="threadExportModal" class="modal-backdrop" onclick="if(event.target===this) closeThreadExportModal()">
+    <div class="modal-card" style="max-width:380px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="modal-title" style="margin:0;">📤 Export Thread</div>
+        <button type="button" class="btn-ghost" onclick="closeThreadExportModal()" style="font-size:18px; padding:4px;" title="Close">✕</button>
+      </div>
+      <div class="modal-sub" id="thread-export-sub" style="margin-bottom:14px;">Export notes in this thread as JSON or CSV.</div>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn-outline" onclick="executeThreadExport('json')" style="flex:1; height:42px; font-size:13.5px;" title="Export thread as JSON">
+          📤 JSON Export
+        </button>
+        <button type="button" class="btn-outline" onclick="executeThreadExport('csv')" style="flex:1; height:42px; font-size:13.5px;" title="Export thread as CSV">
+          📤 CSV Export
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATE FILTER MODAL -->
+  <div id="dateFilterModal" class="modal-backdrop" onclick="if(event.target===this) closeDateFilterModal()">
+    <div class="modal-card">
+      <div class="modal-title">📅 Date Filter</div>
+      <div id="datePicker" style="margin-top:12px;"></div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button type="button" class="btn-outline" onclick="closeDateFilterModal()" style="margin-right:auto;">Close</button>
+        <button type="button" class="btn-outline" onclick="clearDateFilter()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT NOTE MODAL -->
+  <div id="editNoteModal" class="modal-backdrop" onclick="if(event.target===this) closeEditNoteModal()">
+    <div class="modal-card">
+      <div class="modal-title">✏️ Edit Note</div>
+      <div class="field-group" style="margin-bottom:12px;">
+        <span class="field-label">Threads</span>
+        <div class="inline-dropdown-wrap">
+          <input type="text" id="edit-note-topic" autocomplete="off" placeholder="Add thread..."
+            oninput="filterEditTopicDropdown()" onfocus="showEditTopicDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault(); addEditNoteThread();}" style="width:100%; height:38px;">
+          <div id="edit-topic-dropdown" class="dropdown-menu"></div>
+        </div>
+        <div class="note-threads-row" id="edit-note-threads-row"></div>
+      </div>
+      <div class="datetime-row" style="display:flex; gap:10px; margin-bottom:12px;">
+        <div class="field-group" style="flex:1;">
+          <span class="field-label">Date</span>
+          <input type="date" id="edit-note-date" style="height:38px;">
+        </div>
+        <div class="field-group" style="flex:1;">
+          <span class="field-label">Time</span>
+          <input type="time" id="edit-note-time" style="height:38px;">
+        </div>
+      </div>
+      <div class="field-group" style="margin-bottom:12px;">
+        <span class="field-label">Note</span>
+        <textarea id="edit-note-text" style="width:100%; min-height:120px; resize:none;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" style="flex:1;" onclick="closeEditNoteModal()" title="Cancel">Cancel</button>
+        <button type="button" class="btn-outline" style="flex:1;" onclick="saveNoteEditModal()" title="Save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RENAME THREAD MODAL -->
+  <div id="renameThreadModal" class="modal-backdrop" onclick="if(event.target===this) closeRenameThreadModal(null)">
+    <div class="modal-card" style="max-width:380px;">
+      <div class="modal-title">✏️ Rename Thread</div>
+      <div class="modal-sub">Enter a new name for this thread:</div>
+      <div class="field-group" style="margin-bottom:12px;">
+        <input type="text" id="rename-thread-input" class="search-input" style="padding-left:14px !important;" placeholder="Thread name..." onkeydown="if(event.key==='Enter'){event.preventDefault();submitRenameThreadModal();}">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" style="flex:1;" onclick="closeRenameThreadModal(null)">Cancel</button>
+        <button type="button" class="btn-outline" style="flex:1;" onclick="submitRenameThreadModal()">Rename</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE THREAD CONFIRM MODAL -->
+  <div id="deleteThreadModal" class="modal-backdrop" onclick="if(event.target===this) closeDeleteThreadModal(false)">
+    <div class="modal-card" style="max-width:380px;">
+      <div class="modal-title">🗑️ Delete Thread</div>
+      <div class="modal-sub" id="delete-thread-desc">Delete this thread? Notes that only belong to this thread will be deleted. Notes with multiple threads will have this thread removed.</div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" style="flex:1;" onclick="closeDeleteThreadModal(false)">Cancel</button>
+        <button type="button" class="btn-primary" style="flex:1; background:var(--red); border-color:var(--red);" onclick="closeDeleteThreadModal(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div id="deleteConfirmModal" class="modal-backdrop" onclick="if(event.target===this) closeDeleteConfirmModal(false)">
+    <div class="modal-card" style="max-width:380px;">
+      <div class="modal-title">🗑️ Delete Note</div>
+      <div class="modal-sub">Delete this note permanently?</div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" style="flex:1;" onclick="closeDeleteConfirmModal(false)">Cancel</button>
+        <button type="button" class="btn-primary" style="flex:1; background:var(--red); border-color:var(--red);" onclick="closeDeleteConfirmModal(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast"></div>
+
+  <!-- PROGRESS BAR -->
+  <div id="progressBar" class="progress-bar-wrap">
+    <div class="progress-bar-row">
+      <div id="progressBarLabel" class="progress-bar-label">Working...</div>
+      <button id="progressBarStopBtn" class="progress-bar-stop" onclick="requestStop()" title="Close">✕</button>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let journalEntries = [];
+    let journalRenderVersion = 0;
+    let journalViewMode = 'threads'; // 'threads' or 'notes'
+    const openThreadIds = new Set();
+    let noteThreadsDraft = [];
+    let editNoteThreadsDraft = [];
+    let currentDateFilter = null;
+    let calendarMonth = new Date().getMonth();
+    let calendarYear = new Date().getFullYear();
+    let isSearching = false;
+    let currentSearchTerm = '';
+    let searchDebounceTimer = null;
+    const TRUNCATE_CHARS = 100;
+    const expandedNotesThreads = new Set();
+    const expandedNotesNotes = new Set();
+    const revealedNotesThreads = new Set();
+    const revealedNotesNotes = new Set();
+
+    function hashString(input) {
+      let hash = 2166136261;
+      const str = String(input || '');
+      for (let i = 0; i < str.length; i += 1) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0).toString(36);
+    }
+
+    let db = null;
+    let dbPromise = null;
+
+    function openDB() {
+      if (db) return Promise.resolve(db);
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open('omoi_db', 22);
+        req.onupgradeneeded = (e) => {
+          const d = e.target.result;
+          if (!d.objectStoreNames.contains('entries')) {
+            d.createObjectStore('entries', { keyPath: 'id' });
+          }
+          if (!d.objectStoreNames.contains('chunks')) {
+            d.createObjectStore('chunks', { keyPath: 'cid' });
+          }
+          if (!d.objectStoreNames.contains('chats')) {
+            d.createObjectStore('chats', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => {
+          db = req.result;
+          resolve(db);
+        };
+        req.onerror = () => {
+          dbPromise = null;
+          reject(req.error);
+        };
+      });
+      return dbPromise;
+    }
+
+    async function loadAllData() {
+      try {
+        const d = await openDB();
+        journalEntries = await new Promise(res => {
+          const tx = d.transaction('entries', 'readonly');
+          tx.objectStore('entries').getAll().onsuccess = e => res(e.target.result || []);
+        });
+        journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } catch (ex) {
+        console.error('Failed to load data:', ex);
+      }
+    }
+
+    function saveAllEntriesToDB(entries) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const d = await openDB();
+          const tx = d.transaction('entries', 'readwrite');
+          const store = tx.objectStore('entries');
+          entries.forEach(entry => store.put(entry));
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        } catch (ex) { reject(ex); }
+      });
+    }
+
+    async function saveOneEntry(entry) {
+      journalRenderVersion += 1;
+      try {
+        const d = await openDB();
+        const tx = d.transaction('entries', 'readwrite');
+        tx.objectStore('entries').put(entry);
+        return new Promise((res, rej) => {
+          tx.oncomplete = res;
+          tx.onerror = () => rej(tx.error);
+        });
+      } catch (ex) {
+        console.warn('saveOneEntry fallback:', ex);
+        await saveAllEntriesToDB(journalEntries);
+      }
+    }
+
+    async function deleteOneEntry(id) {
+      journalRenderVersion += 1;
+      try {
+        const d = await openDB();
+        const tx = d.transaction('entries', 'readwrite');
+        const store = tx.objectStore('entries');
+        store.delete(id);
+        if (typeof id === 'string' && !isNaN(Number(id))) {
+          store.delete(Number(id));
+        } else if (typeof id === 'number') {
+          store.delete(String(id));
+        }
+        return new Promise((res, rej) => {
+          tx.oncomplete = res;
+          tx.onerror = () => rej(tx.error);
+        });
+      } catch (ex) {
+        console.warn('deleteOneEntry failed:', ex);
+      }
+    }
+
+    // Date & Time helpers
+    function pad2(v) { return String(v).padStart(2, '0'); }
+    function formatDateForStorage(date) {
+      return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+    }
+    function formatTimeForInput(date) {
+      return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+    }
+    function normalizeTimeTo24Hour(raw) {
+      if (!raw) return '--:--';
+      const str = String(raw).trim();
+      if (/^\d{1,2}:\d{2}$/.test(str)) {
+        const parts = str.split(':');
+        return `${pad2(parts[0])}:${parts[1]}`;
+      }
+      return str;
+    }
+    function formatAnyTimeToDisplay(raw) {
+      if (!raw || raw === '--:--') return '';
+      const parts = raw.split(':');
+      if (parts.length < 2) return raw;
+      let h = parseInt(parts[0], 10);
+      const m = parts[1];
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${m} ${ampm}`;
+    }
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    function hapticFeedback(type = 'light') {
+      try {
+        if ('vibrate' in navigator) navigator.vibrate(type === 'success' ? [15, 30, 15] : 10);
+      } catch (e) {}
+    }
+    function toast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.toggle('error', isError);
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2400);
+    }
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      hapticFeedback('light');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-' + tabId);
+      if (panel) panel.classList.add('active');
+
+      if (tabId === 'history') {
+        renderJournalList();
+      }
+    }
+
+    // Draft management
+    function loadDraft() {
+      const draft = localStorage.getItem('omoi_draft');
+      const textarea = document.getElementById('entry-note');
+      if (draft && textarea) textarea.value = draft;
+    }
+    function saveDraft() {
+      const textarea = document.getElementById('entry-note');
+      if (textarea) localStorage.setItem('omoi_draft', textarea.value);
+    }
+    function initEntryDateTime() {
+      const now = new Date();
+      const dateEl = document.getElementById('entry-date');
+      const timeEl = document.getElementById('entry-time');
+      if (dateEl) dateEl.value = formatDateForStorage(now);
+      if (timeEl) timeEl.value = formatTimeForInput(now);
+    }
+
+    // ===== THREADS SYSTEM =====
+    function getEntryThreads(entry) {
+      if (entry && Array.isArray(entry.threads)) return entry.threads.filter(Boolean);
+      return [];
+    }
+    function getTopicsList() {
+      const set = new Set();
+      journalEntries.forEach(e => {
+        getEntryThreads(e).forEach(t => set.add(t));
+      });
+      return Array.from(set).sort();
+    }
+
+    // Write note threads
+    function addNoteThread() {
+      const input = document.getElementById('entry-topic');
+      const val = input ? input.value.trim() : '';
+      if (!val) return;
+      if (noteThreadsDraft.includes(val)) {
+        toast('Already added', true);
+        input.value = '';
+        return;
+      }
+      noteThreadsDraft.push(val);
+      input.value = '';
+      const dropdown = document.getElementById('topic-dropdown');
+      if (dropdown) dropdown.style.display = 'none';
+      renderNoteThreadPills();
+    }
+    function removeNoteThread(thread) {
+      noteThreadsDraft = noteThreadsDraft.filter(t => t !== thread);
+      renderNoteThreadPills();
+    }
+    function renderNoteThreadPills() {
+      const row = document.getElementById('note-threads-row');
+      if (!row) return;
+      row.innerHTML = noteThreadsDraft.map(t =>
+        `<div class="note-thread-pill"><span>🧵 ${escapeHtml(t)}</span><span class="remove" onclick="removeNoteThread(decodeURIComponent('${encodeURIComponent(t)}'))">×</span></div>`
+      ).join('');
+    }
+    function showTopicDropdown() {
+      const input = document.getElementById('entry-topic');
+      const dropdown = document.getElementById('topic-dropdown');
+      if (!input || !dropdown) return;
+      const query = input.value.toLowerCase().trim();
+      const topicsList = getTopicsList().filter(t => !noteThreadsDraft.includes(t));
+      let filtered = topicsList.filter(t => t.toLowerCase().includes(query));
+      if (query && !topicsList.some(t => t.toLowerCase() === query)) {
+        filtered.unshift(`+ "${input.value.trim()}"`);
+      }
+      if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = filtered.map(item => {
+        const isAdd = item.startsWith('+');
+        const rawValue = isAdd ? item.replace(/^\+\s*"/, '').replace(/"$/, '') : item;
+        return `<div class="dropdown-item ${isAdd ? 'add-new-hint' : ''}" onclick="selectTopic(decodeURIComponent('${encodeURIComponent(rawValue)}'))">${escapeHtml(item)}</div>`;
+      }).join('');
+      dropdown.style.display = 'block';
+    }
+    function filterTopicDropdown() { showTopicDropdown(); }
+    function selectTopic(thread) {
+      if (!noteThreadsDraft.includes(thread)) {
+        noteThreadsDraft.push(thread);
+        renderNoteThreadPills();
+      }
+      const input = document.getElementById('entry-topic');
+      if (input) input.value = '';
+      const dropdown = document.getElementById('topic-dropdown');
+      if (dropdown) dropdown.style.display = 'none';
+    }
+
+    // Edit note threads
+    function addEditNoteThread() {
+      const input = document.getElementById('edit-note-topic');
+      const val = input ? input.value.trim() : '';
+      if (!val) return;
+      if (editNoteThreadsDraft.includes(val)) {
+        toast('Already added', true);
+        input.value = '';
+        return;
+      }
+      editNoteThreadsDraft.push(val);
+      input.value = '';
+      const dropdown = document.getElementById('edit-topic-dropdown');
+      if (dropdown) dropdown.style.display = 'none';
+      renderEditNoteThreadPills();
+    }
+    function removeEditNoteThread(thread) {
+      editNoteThreadsDraft = editNoteThreadsDraft.filter(t => t !== thread);
+      renderEditNoteThreadPills();
+    }
+    function renderEditNoteThreadPills() {
+      const row = document.getElementById('edit-note-threads-row');
+      if (!row) return;
+      row.innerHTML = editNoteThreadsDraft.map(t =>
+        `<div class="note-thread-pill"><span>🧵 ${escapeHtml(t)}</span><span class="remove" onclick="removeEditNoteThread(decodeURIComponent('${encodeURIComponent(t)}'))">×</span></div>`
+      ).join('');
+    }
+    function showEditTopicDropdown() {
+      const input = document.getElementById('edit-note-topic');
+      const dropdown = document.getElementById('edit-topic-dropdown');
+      if (!input || !dropdown) return;
+      const query = input.value.toLowerCase().trim();
+      const topicsList = getTopicsList().filter(t => !editNoteThreadsDraft.includes(t));
+      let filtered = topicsList.filter(t => t.toLowerCase().includes(query));
+      if (query && !topicsList.some(t => t.toLowerCase() === query)) {
+        filtered.unshift(`+ "${input.value.trim()}"`);
+      }
+      if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = filtered.map(item => {
+        const isAdd = item.startsWith('+');
+        const rawValue = isAdd ? item.replace(/^\+\s*"/, '').replace(/"$/, '') : item;
+        return `<div class="dropdown-item ${isAdd ? 'add-new-hint' : ''}" onclick="selectEditTopic(decodeURIComponent('${encodeURIComponent(rawValue)}'))">${escapeHtml(item)}</div>`;
+      }).join('');
+      dropdown.style.display = 'block';
+    }
+    function filterEditTopicDropdown() { showEditTopicDropdown(); }
+    function selectEditTopic(thread) {
+      if (!editNoteThreadsDraft.includes(thread)) {
+        editNoteThreadsDraft.push(thread);
+        renderEditNoteThreadPills();
+      }
+      const input = document.getElementById('edit-note-topic');
+      if (input) input.value = '';
+      const dropdown = document.getElementById('edit-topic-dropdown');
+      if (dropdown) dropdown.style.display = 'none';
+    }
+
+    // Toggle view mode between threads and notes
+    function toggleJournalViewMode() {
+      journalViewMode = (journalViewMode === 'threads' ? 'notes' : 'threads');
+      journalRenderVersion++;
+      renderJournalList();
+    }
+
+    // Toggle card expansion (Only one thread card can be expanded at a time)
+    function toggleCard(cardId, isJournal = false) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      const isAlreadyOpen = openThreadIds.has(cardId) || card.classList.contains('open');
+
+      // Close any other open thread cards in the DOM
+      document.querySelectorAll('.journal-card.open').forEach(c => {
+        c.classList.remove('open');
+      });
+      openThreadIds.clear();
+
+      if (!isAlreadyOpen) {
+        card.classList.add('open');
+        openThreadIds.add(cardId);
+      }
+    }
+
+    // Open a specific thread and scroll to it (single thread expanded)
+    function openThread(threadName) {
+      journalViewMode = 'threads';
+      const threadId = `thread-${hashString(threadName)}`;
+      openThreadIds.clear();
+      openThreadIds.add(threadId);
+      renderJournalList();
+      setTimeout(() => {
+        const el = document.getElementById(threadId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
+
+    // Rename Thread Modal controller
+    let renameThreadResolver = null;
+    function promptRenameThread(currentThread) {
+      return new Promise(resolve => {
+        renameThreadResolver = resolve;
+        const modal = document.getElementById('renameThreadModal');
+        const input = document.getElementById('rename-thread-input');
+        if (input) {
+          input.value = currentThread;
+        }
+        if (modal) modal.classList.add('open');
+        setTimeout(() => {
+          if (input) {
+            input.focus();
+            input.select();
+          }
+        }, 50);
+      });
+    }
+
+    function closeRenameThreadModal(val = null) {
+      const modal = document.getElementById('renameThreadModal');
+      if (modal) modal.classList.remove('open');
+      if (renameThreadResolver) {
+        renameThreadResolver(val);
+        renameThreadResolver = null;
+      }
+    }
+
+    function submitRenameThreadModal() {
+      const input = document.getElementById('rename-thread-input');
+      const val = input ? input.value.trim() : '';
+      closeRenameThreadModal(val);
+    }
+
+    // Delete Thread Modal controller
+    let deleteThreadResolver = null;
+    function confirmDeleteThread(thread) {
+      return new Promise(resolve => {
+        deleteThreadResolver = resolve;
+        const desc = document.getElementById('delete-thread-desc');
+        if (desc) {
+          desc.textContent = `Delete thread "${thread}"? Notes that only belong to this thread will be deleted. Notes with multiple threads will have this thread removed.`;
+        }
+        const modal = document.getElementById('deleteThreadModal');
+        if (modal) modal.classList.add('open');
+      });
+    }
+
+    function closeDeleteThreadModal(confirmed = false) {
+      const modal = document.getElementById('deleteThreadModal');
+      if (modal) modal.classList.remove('open');
+      if (deleteThreadResolver) {
+        deleteThreadResolver(confirmed);
+        deleteThreadResolver = null;
+      }
+    }
+
+    // Edit thread name (using custom modal)
+    async function editThread(thread) {
+      const newName = await promptRenameThread(thread);
+      if (!newName || !newName.trim() || newName.trim() === thread) return;
+      const renamed = newName.trim();
+
+      journalEntries.forEach(entry => {
+        const threads = getEntryThreads(entry);
+        if (threads.includes(thread)) {
+          entry.threads = threads.map(t => t === thread ? renamed : t);
+          entry.updatedAt = Date.now();
+        }
+      });
+
+      await saveAllEntriesToDB(journalEntries);
+      journalRenderVersion++;
+      renderJournalList();
+      toast('Thread renamed');
+    }
+
+    // Delete thread (using custom modal)
+    async function deleteThread(thread) {
+      const confirmed = await confirmDeleteThread(thread);
+      if (!confirmed) return;
+
+      const threadId = `thread-${hashString(thread)}`;
+      openThreadIds.delete(threadId);
+
+      const toDelete = [];
+      journalEntries = journalEntries.filter(e => {
+        const threads = getEntryThreads(e);
+        if (!threads.includes(thread)) return true;
+        if (threads.length > 1) {
+          e.threads = threads.filter(t => t !== thread);
+          e.updatedAt = Date.now();
+          return true;
+        }
+        toDelete.push(e.id);
+        return false;
+      });
+
+      await saveAllEntriesToDB(journalEntries);
+      for (const id of toDelete) {
+        await deleteOneEntry(id);
+      }
+      journalRenderVersion++;
+      renderJournalList();
+      toast('Thread deleted');
+    }
+
+    // Quick write in thread
+    function writeInThread(threadName) {
+      noteThreadsDraft = [];
+      if (threadName && threadName !== '__general__') {
+        noteThreadsDraft.push(threadName);
+      }
+      renderNoteThreadPills();
+      switchTab('write');
+      setTimeout(() => {
+        const textarea = document.getElementById('entry-note');
+        if (textarea) textarea.focus();
+      }, 50);
+    }
+
+    // Save note
+    async function saveJournalEntry() {
+      const now = new Date();
+      const dateVal = document.getElementById('entry-date')?.value;
+      const timeVal = document.getElementById('entry-time')?.value;
+      const date = dateVal || formatDateForStorage(now);
+      const time = timeVal || formatTimeForInput(now);
+      let note = document.getElementById('entry-note').value.trim();
+      if (!note) { toast('Note is empty', true); return; }
+
+      // Auto-capture typed thread if Enter was not pressed
+      const topicInput = document.getElementById('entry-topic');
+      const pendingTopic = topicInput?.value.trim();
+      if (pendingTopic && !noteThreadsDraft.includes(pendingTopic)) {
+        noteThreadsDraft.push(pendingTopic);
+      }
+
+      const entry = {
+        id: Date.now(),
+        date,
+        time: normalizeTimeTo24Hour(time) || '--:--',
+        note,
+        threads: [...noteThreadsDraft],
+        createdAt: now.toISOString(),
+        updatedAt: Date.now()
+      };
+
+      journalEntries.unshift(entry);
+      journalRenderVersion++;
+
+      document.getElementById('entry-note').value = '';
+      if (topicInput) topicInput.value = '';
+      const savedThreads = [...noteThreadsDraft];
+      noteThreadsDraft = [];
+      renderNoteThreadPills();
+      initEntryDateTime();
+      localStorage.removeItem('omoi_draft');
+      hapticFeedback('success');
+      toast(savedThreads.length ? `✓ Saved to ${savedThreads.join(', ')}` : '✓ Saved');
+
+      await saveOneEntry(entry);
+    }
+
+    // Expand & Reveal
+    function toggleNoteExpand(id) {
+      const idStr = String(id);
+      const targetSet = (journalViewMode === 'threads') ? expandedNotesThreads : expandedNotesNotes;
+      if (targetSet.has(id) || targetSet.has(idStr)) {
+        targetSet.delete(id);
+        targetSet.delete(idStr);
+      } else {
+        targetSet.add(id);
+        targetSet.add(idStr);
+      }
+      journalRenderVersion++;
+      renderJournalList();
+    }
+    function toggleNoteReveal(id) {
+      const idStr = String(id);
+      const targetSet = (journalViewMode === 'threads') ? revealedNotesThreads : revealedNotesNotes;
+      if (targetSet.has(id) || targetSet.has(idStr)) {
+        targetSet.delete(id);
+        targetSet.delete(idStr);
+      } else {
+        targetSet.add(id);
+        targetSet.add(idStr);
+      }
+      const isRevealed = targetSet.has(id) || targetSet.has(idStr);
+      const textEls = document.querySelectorAll(`[id="note-text-${id}"]`);
+      const eyeBtns = document.querySelectorAll(`[id="eye-btn-${id}"]`);
+      textEls.forEach(el => {
+        el.classList.toggle('blurred', !isRevealed);
+        el.classList.toggle('revealed', isRevealed);
+      });
+      eyeBtns.forEach(btn => {
+        btn.textContent = isRevealed ? '🙈' : '👁️';
+      });
+    }
+
+    // Render individual note
+    function renderSingleNote(entry, forceReveal = false) {
+      let text = entry.note || '';
+      const lines = text.split('\n');
+      const isLong = text.length > TRUNCATE_CHARS || lines.length > 3;
+      const expSet = (journalViewMode === 'threads') ? expandedNotesThreads : expandedNotesNotes;
+      const revSet = (journalViewMode === 'threads') ? revealedNotesThreads : revealedNotesNotes;
+      const expanded = expSet.has(entry.id) || expSet.has(String(entry.id));
+      const revealed = forceReveal || revSet.has(entry.id) || revSet.has(String(entry.id));
+
+      let displayTextHtml;
+      if (isLong && !expanded) {
+        let snippetLines = lines.slice(0, 3).join('\n');
+        if (snippetLines.length > TRUNCATE_CHARS) {
+          snippetLines = snippetLines.slice(0, TRUNCATE_CHARS).trimEnd();
+        }
+        displayTextHtml = escapeHtml(snippetLines).replace(/\n/g, '<br>') + '…';
+      } else {
+        displayTextHtml = escapeHtml(text).replace(/\n/g, '<br>');
+      }
+
+      const readMoreBtn = isLong
+        ? `<span class="note-read-more" id="read-more-${entry.id}" onclick="toggleNoteExpand('${entry.id}')" role="button" tabindex="0">${expanded ? '▲ Less' : '▼ More'}</span>`
+        : '';
+      const blurClass = revealed ? 'revealed' : 'blurred';
+      const eyeIcon = revealed ? '🙈' : '👁️';
+
+      const entryThreads = getEntryThreads(entry);
+      const threadBadges = entryThreads.length > 0
+        ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${entryThreads.map(t => `<span class="note-thread-pill readonly" onclick="event.stopPropagation(); openThread(decodeURIComponent('${encodeURIComponent(t)}'))">🧵 ${escapeHtml(t)}</span>`).join('')}</div>`
+        : '';
+
+      return `
+      <div class="note-item" id="note-${entry.id}">
+        <div class="note-header">
+          <div class="note-datetime">📅 ${entry.date}${entry.time && entry.time !== '--:--' ? ' · ' + formatAnyTimeToDisplay(entry.time) : ''}</div>
+          <div class="note-actions">
+            <button id="eye-btn-${entry.id}" class="btn-eye" onclick="toggleNoteReveal('${entry.id}')" title="${revealed ? 'Blur' : 'Reveal'}">${eyeIcon}</button>
+            <button class="btn-duo btn-ghost btn-sm" onclick="editNote('${entry.id}')" title="Edit">✏️</button>
+            <button class="btn-duo btn-ghost btn-sm" style="color:var(--red);" onclick="deleteNote('${entry.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+        <div class="note-text ${blurClass}" id="note-text-${entry.id}">${displayTextHtml}</div>
+        ${readMoreBtn}
+        ${threadBadges}
+      </div>`;
+    }
+
+    // Journal search & filters
+    function updateJournalSearchQuery() {
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        renderJournalList();
+      }, 250);
+    }
+
+    // ===== RENDER JOURNAL (THREADS OR NOTES VIEW) =====
+    function renderJournalList() {
+      const container = document.getElementById('journal-list');
+      const filtersContainer = document.getElementById('journal-filters');
+      if (!container || !filtersContainer) return;
+
+      const searchTerm = (document.getElementById('journal-search')?.value || '').toLowerCase().trim();
+      isSearching = searchTerm.length > 0;
+      currentSearchTerm = searchTerm;
+
+      let filtered = [...journalEntries];
+
+      if (currentDateFilter) {
+        filtered = filtered.filter(e => e.date === currentDateFilter);
+      }
+
+      filtered.sort((a, b) => {
+        const aT = normalizeTimeTo24Hour(a.time) || '00:00';
+        const bT = normalizeTimeTo24Hour(b.time) || '00:00';
+        return new Date(`${b.date}T${bT}:00`) - new Date(`${a.date}T${aT}:00`);
+      });
+
+      // Filter toolbar buttons (all identical to calendar button: btn-duo btn-card, no fill)
+      filtersContainer.innerHTML = `
+        <button
+          type="button"
+          class="btn-duo btn-card journal-filter-btn"
+          onclick="toggleJournalViewMode()"
+          title="Toggle view (Threads / Notes)"
+        >${journalViewMode === 'threads' ? '🧵' : '📝'}</button>
+        <button
+          type="button"
+          class="btn-duo btn-card journal-filter-btn"
+          onclick="openDateFilterModal()"
+          title="Filter date"
+        >🗓️</button>
+        <button
+          type="button"
+          class="btn-duo btn-card journal-filter-btn"
+          onclick="openBackupModal()"
+          title="Backup &amp; Sync"
+        >💾</button>
+        <button
+          type="button"
+          class="btn-duo btn-card journal-filter-btn"
+          onclick="switchTab('write')"
+          title="Write note"
+        >✍️</button>
+      `;
+
+      if (filtered.length === 0) {
+        let emptyHtml;
+        if (isSearching) {
+          emptyHtml = `<div class="empty-state"><div class="icon">🔍</div><p>No matches</p><span>Try another search</span></div>`;
+        } else if (currentDateFilter) {
+          emptyHtml = `<div class="empty-state"><div class="icon">📅</div><p>No notes</p><span>For ${new Date(currentDateFilter).toLocaleDateString()}</span><button type="button" class="btn-outline" onclick="clearDateFilter()" style="margin-top:10px; height:34px; font-size:12px; padding:0 14px;">Clear Filter</button></div>`;
+        } else {
+          emptyHtml = `<div class="empty-state"><div class="icon">✍️</div><p>No notes yet</p><button type="button" class="btn-outline" onclick="switchTab('write')" style="margin-top:10px; height:34px; font-size:12px; padding:0 14px;">Write Note</button></div>`;
+        }
+        container.innerHTML = emptyHtml;
+        return;
+      }
+
+      let html = '';
+
+      if (journalViewMode === 'notes') {
+        // NOTES VIEW: Individual notes in chronological order
+        if (isSearching) {
+          filtered = filtered.filter(e => {
+            const threadMatch = getEntryThreads(e).some(t => t.toLowerCase().includes(searchTerm));
+            const noteMatch = (e.note || '').toLowerCase().includes(searchTerm);
+            return threadMatch || noteMatch;
+          });
+        }
+        if (filtered.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No matches</p><span>Try another search</span></div>`;
+          return;
+        }
+        html = `<div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:100%; box-sizing:border-box;">`;
+        html += filtered.map(entry => renderSingleNote(entry, isSearching)).join('');
+        html += `</div>`;
+      } else {
+        // THREADS VIEW: Grouped into thread cards
+        const threadMap = new Map();
+        const untaggedNotes = [];
+
+        filtered.forEach(entry => {
+          const threads = getEntryThreads(entry);
+          if (threads.length === 0) {
+            untaggedNotes.push(entry);
+          } else {
+            threads.forEach(t => {
+              if (!threadMap.has(t)) threadMap.set(t, []);
+              threadMap.get(t).push(entry);
+            });
+          }
+        });
+
+        let sortedThreads = Array.from(threadMap.keys()).sort();
+        let displayedUntagged = untaggedNotes;
+
+        if (isSearching) {
+          sortedThreads = sortedThreads.filter(t => {
+            const threadMatches = t.toLowerCase().includes(searchTerm);
+            const notesInThread = threadMap.get(t) || [];
+            const noteMatches = notesInThread.some(n => (n.note || '').toLowerCase().includes(searchTerm));
+            return threadMatches || noteMatches;
+          });
+          displayedUntagged = untaggedNotes.filter(n => (n.note || '').toLowerCase().includes(searchTerm));
+        }
+
+        if (sortedThreads.length === 0 && displayedUntagged.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No matches</p><span>No threads or notes match "${escapeHtml(searchTerm)}"</span></div>`;
+          return;
+        }
+
+        // Render each thread card
+        sortedThreads.forEach(threadName => {
+          let notesInThread = threadMap.get(threadName) || [];
+          if (isSearching && !threadName.toLowerCase().includes(searchTerm)) {
+            notesInThread = notesInThread.filter(n => (n.note || '').toLowerCase().includes(searchTerm));
+          }
+          const threadId = `thread-${hashString(threadName)}`;
+          const isOpen = openThreadIds.has(threadId);
+          const encodedThread = encodeURIComponent(threadName);
+          const count = notesInThread.length;
+
+          html += `
+          <div class="journal-card ${isOpen ? 'open' : ''}" id="${threadId}" data-topic="${escapeHtml(threadName)}">
+            <div class="journal-head" onclick="toggleCard('${threadId}', true)">
+              <div class="card-header-main">
+                <span style="font-size:18px;">🧵</span>
+                <div>
+                  <div class="journal-title">${escapeHtml(threadName)}</div>
+                  <div class="note-datetime" style="font-size:12px; font-weight:800; color:var(--muted);">${count} note${count !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+              <div class="card-header-actions">
+                <button type="button" class="btn-duo btn-card btn-sm" onclick="event.stopPropagation(); writeInThread(decodeURIComponent('${encodedThread}'))" title="Write in thread">➕</button>
+                <button type="button" class="btn-duo btn-card btn-sm" onclick="event.stopPropagation(); openThreadExportModal(decodeURIComponent('${encodedThread}'))" title="Export thread">📤</button>
+                <button type="button" class="btn-duo btn-card btn-sm" onclick="event.stopPropagation(); editThread(decodeURIComponent('${encodedThread}'))" title="Rename thread">✏️</button>
+                <button type="button" class="btn-duo btn-card btn-sm" style="color:var(--red);" onclick="event.stopPropagation(); deleteThread(decodeURIComponent('${encodedThread}'))" title="Delete thread">🗑️</button>
+              </div>
+              <div class="card-chevron">▾</div>
+            </div>
+            <div class="journal-body">
+              <div class="journal-content" id="${threadId}-content">
+                ${notesInThread.map(entry => renderSingleNote(entry, isSearching)).join('')}
+              </div>
+            </div>
+          </div>`;
+        });
+
+        // Untagged/General notes card
+        if (displayedUntagged.length > 0) {
+          const threadId = 'thread-general';
+          const isOpen = openThreadIds.has(threadId);
+          const count = displayedUntagged.length;
+
+          html += `
+          <div class="journal-card ${isOpen ? 'open' : ''}" id="${threadId}" data-topic="__general__">
+            <div class="journal-head" onclick="toggleCard('${threadId}', true)">
+              <div class="card-header-main">
+                <span style="font-size:18px;">📝</span>
+                <div>
+                  <div class="journal-title">General Notes</div>
+                  <div class="note-datetime" style="font-size:12px; font-weight:800; color:var(--muted);">${count} note${count !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+              <div class="card-header-actions">
+                <button type="button" class="btn-duo btn-card btn-sm" onclick="event.stopPropagation(); writeInThread('__general__')" title="Write note">➕</button>
+                <button type="button" class="btn-duo btn-card btn-sm" onclick="event.stopPropagation(); openThreadExportModal('__general__')" title="Export thread">📤</button>
+              </div>
+              <div class="card-chevron">▾</div>
+            </div>
+            <div class="journal-body">
+              <div class="journal-content" id="${threadId}-content">
+                ${displayedUntagged.map(entry => renderSingleNote(entry, isSearching)).join('')}
+              </div>
+            </div>
+          </div>`;
+        }
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Date picker modal
+    function setDateFilter(date) {
+      currentDateFilter = date;
+      journalRenderVersion++;
+      renderJournalList();
+    }
+    function clearDateFilter() {
+      currentDateFilter = null;
+      const today = new Date();
+      calendarMonth = today.getMonth();
+      calendarYear = today.getFullYear();
+      closeDateFilterModal();
+      journalRenderVersion++;
+      renderJournalList();
+    }
+    function openDateFilterModal() {
+      const today = new Date();
+      calendarMonth = today.getMonth();
+      calendarYear = today.getFullYear();
+      renderDateFilterModal();
+      document.getElementById('dateFilterModal')?.classList.add('open');
+    }
+    function closeDateFilterModal() {
+      document.getElementById('dateFilterModal')?.classList.remove('open');
+    }
+    function changeCalendarMonth(direction) {
+      calendarMonth += direction;
+      if (calendarMonth < 0) {
+        calendarMonth = 11;
+        calendarYear--;
+      } else if (calendarMonth > 11) {
+        calendarMonth = 0;
+        calendarYear++;
+      }
+      renderDateFilterModal();
+    }
+    function renderDateFilterModal() {
+      const container = document.getElementById('datePicker');
+      if (!container) return;
+      const allDates = new Set(journalEntries.map(e => e.date));
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+
+      let html = `<div style="text-align: center; margin-bottom: 12px;">
+        <button type="button" class="btn-duo btn-card btn-sm" onclick="changeCalendarMonth(-1)" style="margin-right: 8px;">◀</button>
+        <h3 style="margin: 0; color: var(--text); font-size: 15px; font-weight: 800; display: inline;">${monthNames[calendarMonth]} ${calendarYear}</h3>
+        <button type="button" class="btn-duo btn-card btn-sm" onclick="changeCalendarMonth(1)" style="margin-left: 8px;">▶</button>
+      </div>`;
+      html += '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px;">';
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      dayNames.forEach(day => {
+        html += `<div style="text-align: center; font-size: 11px; font-weight: 800; color: var(--muted); padding: 4px 0;">${day}</div>`;
+      });
+      const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+      const totalDays = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+      for (let i = 0; i < firstDay; i++) {
+        html += '<div></div>';
+      }
+      for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${calendarYear}-${pad2(calendarMonth + 1)}-${pad2(day)}`;
+        const hasNotes = allDates.has(dateStr);
+        const isSelected = currentDateFilter === dateStr;
+        const today = new Date();
+        const isToday = day === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear();
+
+        let style = 'padding:6px 0; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--border-color); background:var(--card); color:var(--text); cursor:pointer; position:relative;';
+        if (isSelected) {
+          style += 'background:#00e676; color:#031c0c; border-color:#00e676; font-weight:900;';
+        } else if (isToday) {
+          style += 'border-color:#00a2ff; font-weight:800;';
+        }
+        const noteDot = hasNotes ? `<span style="position:absolute; bottom:2px; left:50%; transform:translateX(-50%); color:${isSelected ? '#031c0c' : 'var(--amber)'}; font-size:8px;">●</span>` : '';
+        html += `<button type="button" style="${style}" onclick="setDateFilter('${dateStr}'); closeDateFilterModal();">${day}${noteDot}</button>`;
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // Edit Note Modal
+    let editingNoteId = null;
+    function editNote(id) {
+      const idStr = String(id);
+      const entry = journalEntries.find(e => String(e.id) === idStr);
+      if (!entry) return;
+      editingNoteId = entry.id;
+      const dateEl = document.getElementById('edit-note-date');
+      const timeEl = document.getElementById('edit-note-time');
+      const noteEl = document.getElementById('edit-note-text');
+
+      if (dateEl) dateEl.value = entry.date || formatDateForStorage(new Date());
+      if (timeEl) timeEl.value = normalizeTimeTo24Hour(entry.time) || '';
+      if (noteEl) noteEl.value = entry.note || '';
+
+      editNoteThreadsDraft = [...getEntryThreads(entry)];
+      renderEditNoteThreadPills();
+
+      document.getElementById('editNoteModal')?.classList.add('open');
+      setTimeout(() => noteEl?.focus(), 50);
+    }
+    function closeEditNoteModal() {
+      document.getElementById('editNoteModal')?.classList.remove('open');
+      editingNoteId = null;
+      editNoteThreadsDraft = [];
+      const topicInput = document.getElementById('edit-note-topic');
+      if (topicInput) topicInput.value = '';
+      const dd = document.getElementById('edit-topic-dropdown');
+      if (dd) dd.style.display = 'none';
+    }
+    async function saveNoteEditModal() {
+      if (editingNoteId === null) return;
+      const dateVal = document.getElementById('edit-note-date')?.value;
+      const timeVal = document.getElementById('edit-note-time')?.value;
+      const noteVal = document.getElementById('edit-note-text')?.value.trim();
+      if (!noteVal) { toast('Note is empty', true); return; }
+      if (!dateVal) { toast('Select date', true); return; }
+
+      const topicInput = document.getElementById('edit-note-topic');
+      const pendingTopic = topicInput?.value.trim();
+      if (pendingTopic && !editNoteThreadsDraft.includes(pendingTopic)) {
+        editNoteThreadsDraft.push(pendingTopic);
+      }
+
+      const idStr = String(editingNoteId);
+      const index = journalEntries.findIndex(e => String(e.id) === idStr);
+      if (index > -1) {
+        journalEntries[index].date = dateVal;
+        journalEntries[index].time = timeVal ? (normalizeTimeTo24Hour(timeVal) || '--:--') : '--:--';
+        journalEntries[index].note = noteVal;
+        journalEntries[index].threads = [...editNoteThreadsDraft];
+        journalEntries[index].updatedAt = Date.now();
+
+        journalRenderVersion++;
+        renderJournalList();
+        hapticFeedback('success');
+        toast('Note updated ✓');
+        await saveOneEntry(journalEntries[index]);
+      }
+      closeEditNoteModal();
+    }
+
+    // Delete Note Modal
+    let deleteConfirmResolver = null;
+    function closeDeleteConfirmModal(result) {
+      document.getElementById('deleteConfirmModal')?.classList.remove('open');
+      if (deleteConfirmResolver) {
+        deleteConfirmResolver(result);
+        deleteConfirmResolver = null;
+      }
+    }
+    function confirmDelete() {
+      return new Promise(resolve => {
+        deleteConfirmResolver = resolve;
+        document.getElementById('deleteConfirmModal')?.classList.add('open');
+      });
+    }
+    async function deleteNote(id) {
+      if (!(await confirmDelete())) return;
+      const idStr = String(id);
+      trackDeletedId(idStr);
+      expandedNotesThreads.delete(id);
+      expandedNotesThreads.delete(idStr);
+      expandedNotesNotes.delete(id);
+      expandedNotesNotes.delete(idStr);
+      revealedNotesThreads.delete(id);
+      revealedNotesThreads.delete(idStr);
+      revealedNotesNotes.delete(id);
+      revealedNotesNotes.delete(idStr);
+      journalEntries = journalEntries.filter(e => String(e.id) !== idStr);
+      journalRenderVersion++;
+      renderJournalList();
+      toast('Note deleted');
+      await deleteOneEntry(id);
+    }
+
+    // ===== BACKUP & SYNC MODAL =====
+    function openBackupModal() {
+      document.getElementById('backupModal')?.classList.add('open');
+    }
+    function closeBackupModal() {
+      document.getElementById('backupModal')?.classList.remove('open');
+    }
+
+    // ===== THREAD EXPORT MODAL =====
+    let currentExportThread = null;
+    function openThreadExportModal(threadName) {
+      currentExportThread = threadName;
+      const sub = document.getElementById('thread-export-sub');
+      const displayName = threadName === '__general__' ? 'General Notes' : threadName;
+      if (sub) {
+        sub.textContent = `Export notes in "${displayName}" as JSON or CSV.`;
+      }
+      document.getElementById('threadExportModal')?.classList.add('open');
+    }
+
+    function closeThreadExportModal() {
+      document.getElementById('threadExportModal')?.classList.remove('open');
+      currentExportThread = null;
+    }
+
+    async function executeThreadExport(format) {
+      const threadName = currentExportThread;
+      if (!threadName) {
+        closeThreadExportModal();
+        return;
+      }
+
+      const isGeneral = threadName === '__general__';
+      const notes = journalEntries.filter(e => {
+        const threads = getEntryThreads(e);
+        return isGeneral ? (threads.length === 0) : threads.includes(threadName);
+      });
+
+      if (notes.length === 0) {
+        toast('No notes in this thread to export', true);
+        closeThreadExportModal();
+        return;
+      }
+
+      const safeName = (isGeneral ? 'general' : threadName)
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, 30);
+      const dateStr = new Date().toISOString().slice(0, 10);
+
+      if (format === 'json') {
+        const exportData = {
+          version: '6.0',
+          thread: isGeneral ? 'General Notes' : threadName,
+          exportTime: Date.now(),
+          journalEntries: notes
+        };
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        const exportFilename = `omoi_${safeName}_${dateStr}.json`;
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([jsonStr], exportFilename, { type: 'application/json' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: `Omoi - ${isGeneral ? 'General' : threadName} Backup`,
+                text: `Exported notes for ${isGeneral ? 'General' : threadName}.`
+              });
+              closeThreadExportModal();
+              toast('Thread JSON exported! ✓');
+              return;
+            } catch (shareErr) {}
+          }
+        }
+
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = exportFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        closeThreadExportModal();
+        toast(`Saved as ${exportFilename} ✓`);
+      } else if (format === 'csv') {
+        const headers = ['id', 'date', 'time', 'threads', 'note'];
+        const escapeCSVField = (val) => {
+          const str = String(val == null ? '' : val);
+          if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+
+        const rows = [headers.join(',')];
+        for (const entry of notes) {
+          const threadsStr = getEntryThreads(entry).join('; ');
+          const row = [
+            escapeCSVField(entry.id),
+            escapeCSVField(entry.date),
+            escapeCSVField(entry.time),
+            escapeCSVField(threadsStr),
+            escapeCSVField(entry.note)
+          ];
+          rows.push(row.join(','));
+        }
+
+        const csvContent = "\uFEFF" + rows.join('\r\n');
+        const exportFilename = `omoi_${safeName}_${dateStr}.csv`;
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([csvContent], exportFilename, { type: 'text/csv;charset=utf-8;' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: `Omoi - ${isGeneral ? 'General' : threadName} CSV`,
+                text: `Exported notes for ${isGeneral ? 'General' : threadName}.`
+              });
+              closeThreadExportModal();
+              toast('Thread CSV exported! ✓');
+              return;
+            } catch (shareErr) {}
+          }
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = exportFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        closeThreadExportModal();
+        toast(`Saved as ${exportFilename} ✓`);
+      }
+    }
+
+    async function exportAll() {
+      toast('Preparing export...');
+      try {
+        const exportData = {
+          version: '6.0',
+          exportTime: Date.now(),
+          journalEntries: journalEntries
+        };
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        const exportFilename = `omoi_backup_${new Date().toISOString().slice(0, 10)}.json`;
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([jsonStr], exportFilename, { type: 'application/json' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Omoi Backup',
+                text: 'Save journal notes backup.'
+              });
+              toast('Backup exported! ✓');
+              return;
+            } catch (shareErr) {}
+          }
+        }
+
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = exportFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast(`Backup saved as ${exportFilename} ✓`);
+      } catch (err) {
+        toast('Export failed: ' + err.message, true);
+      }
+    }
+
+    async function importAll() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        toast('Reading file...');
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          try {
+            let importedData = JSON.parse(ev.target.result);
+            let importedNotes = [];
+
+            if (Array.isArray(importedData)) {
+              importedNotes = importedData;
+            } else if (importedData && Array.isArray(importedData.journalEntries)) {
+              importedNotes = importedData.journalEntries;
+            } else if (importedData && typeof importedData.journalEntries === 'object') {
+              importedNotes = Object.values(importedData.journalEntries);
+            } else {
+              toast('Invalid backup format', true);
+              return;
+            }
+
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            for (const item of importedNotes) {
+              if (!item || !item.date || !item.note) continue;
+              const exists = journalEntries.some(entry =>
+                String(entry.id) === String(item.id) || (entry.date === item.date && entry.note === item.note)
+              );
+              if (!exists) {
+                journalEntries.push({
+                  id: item.id || Date.now() + Math.random(),
+                  date: item.date,
+                  time: normalizeTimeTo24Hour(item.time) || '--:--',
+                  note: item.note,
+                  threads: Array.isArray(item.threads) ? item.threads : [],
+                  createdAt: item.createdAt || new Date().toISOString(),
+                  updatedAt: item.updatedAt || Date.now()
+                });
+                addedCount++;
+              } else {
+                skippedCount++;
+              }
+            }
+
+            if (addedCount > 0) {
+              journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              await saveAllEntriesToDB(journalEntries);
+              journalRenderVersion++;
+              renderJournalList();
+              closeBackupModal();
+              toast(`Imported ${addedCount} notes ✓`);
+            } else {
+              toast(`No new notes (${skippedCount} duplicates)`);
+            }
+          } catch (err) {
+            toast('Import failed: ' + err.message, true);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // ===== CSV EXPORT & IMPORT =====
+    async function exportCSV() {
+      toast('Preparing CSV...');
+      try {
+        const headers = ['id', 'date', 'time', 'threads', 'note'];
+        const escapeCSVField = (val) => {
+          const str = String(val == null ? '' : val);
+          if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+
+        const rows = [headers.join(',')];
+        for (const entry of journalEntries) {
+          const threadsStr = getEntryThreads(entry).join('; ');
+          const row = [
+            escapeCSVField(entry.id),
+            escapeCSVField(entry.date),
+            escapeCSVField(entry.time),
+            escapeCSVField(threadsStr),
+            escapeCSVField(entry.note)
+          ];
+          rows.push(row.join(','));
+        }
+
+        const csvContent = "\uFEFF" + rows.join('\r\n');
+        const exportFilename = `omoi_journal_${new Date().toISOString().slice(0, 10)}.csv`;
+
+        if (navigator.share && navigator.canShare) {
+          const file = new File([csvContent], exportFilename, { type: 'text/csv;charset=utf-8;' });
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Omoi CSV Export',
+                text: 'Exported journal notes CSV.'
+              });
+              toast('CSV exported! ✓');
+              return;
+            } catch (shareErr) {}
+          }
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = exportFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast(`CSV saved as ${exportFilename} ✓`);
+      } catch (err) {
+        toast('CSV export failed: ' + err.message, true);
+      }
+    }
+
+    function parseCSV(text) {
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+      const rows = [];
+      let currentRow = [];
+      let currentField = '';
+      let inQuotes = false;
+      let i = 0;
+
+      while (i < text.length) {
+        const c = text[i];
+        const next = text[i + 1];
+
+        if (inQuotes) {
+          if (c === '"') {
+            if (next === '"') {
+              currentField += '"';
+              i += 2;
+              continue;
+            } else {
+              inQuotes = false;
+              i++;
+              continue;
+            }
+          } else {
+            currentField += c;
+            i++;
+            continue;
+          }
+        } else {
+          if (c === '"') {
+            inQuotes = true;
+            i++;
+            continue;
+          } else if (c === ',') {
+            currentRow.push(currentField);
+            currentField = '';
+            i++;
+            continue;
+          } else if (c === '\r') {
+            if (next === '\n') i++;
+            currentRow.push(currentField);
+            currentField = '';
+            rows.push(currentRow);
+            currentRow = [];
+            i++;
+            continue;
+          } else if (c === '\n') {
+            currentRow.push(currentField);
+            currentField = '';
+            rows.push(currentRow);
+            currentRow = [];
+            i++;
+            continue;
+          } else {
+            currentField += c;
+            i++;
+            continue;
+          }
+        }
+      }
+      if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField);
+        rows.push(currentRow);
+      }
+      return rows;
+    }
+
+    async function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,text/csv';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        toast('Reading CSV...');
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          try {
+            const text = ev.target.result;
+            const rows = parseCSV(text);
+            if (rows.length < 2) {
+              toast('CSV is empty or missing data', true);
+              return;
+            }
+
+            const rawHeader = rows[0].map(h => h.trim().toLowerCase());
+            const dateIdx = rawHeader.findIndex(h => h.includes('date'));
+            const timeIdx = rawHeader.findIndex(h => h.includes('time'));
+            const noteIdx = rawHeader.findIndex(h => h.includes('note') || h.includes('text') || h.includes('content') || h.includes('body'));
+            const threadIdx = rawHeader.findIndex(h => h.includes('thread') || h.includes('topic') || h.includes('tag'));
+            const idIdx = rawHeader.findIndex(h => h === 'id');
+
+            if (dateIdx === -1 || noteIdx === -1) {
+              toast('CSV must contain Date and Note columns', true);
+              return;
+            }
+
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            for (let r = 1; r < rows.length; r++) {
+              const row = rows[r];
+              if (!row || row.length === 0 || (row.length === 1 && !row[0].trim())) continue;
+
+              const date = (row[dateIdx] || '').trim();
+              const note = (row[noteIdx] || '').trim();
+              if (!date || !note) continue;
+
+              const timeRaw = timeIdx !== -1 ? (row[timeIdx] || '').trim() : '';
+              const time = normalizeTimeTo24Hour(timeRaw) || '--:--';
+
+              let threads = [];
+              if (threadIdx !== -1 && row[threadIdx]) {
+                threads = row[threadIdx].split(/[;|,]/).map(t => t.trim()).filter(Boolean);
+              }
+
+              const existingId = idIdx !== -1 ? (row[idIdx] || '').trim() : '';
+              const exists = journalEntries.some(entry =>
+                (existingId && String(entry.id) === existingId) ||
+                (entry.date === date && entry.note === note)
+              );
+
+              if (!exists) {
+                journalEntries.push({
+                  id: existingId ? (isNaN(existingId) ? existingId : Number(existingId)) : Date.now() + Math.random(),
+                  date,
+                  time,
+                  note,
+                  threads,
+                  createdAt: `${date}T${time !== '--:--' ? time : '00:00'}:00.000Z`,
+                  updatedAt: Date.now()
+                });
+                addedCount++;
+              } else {
+                skippedCount++;
+              }
+            }
+
+            if (addedCount > 0) {
+              journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              await saveAllEntriesToDB(journalEntries);
+              journalRenderVersion++;
+              renderJournalList();
+              closeBackupModal();
+              toast(`Imported ${addedCount} notes from CSV ✓`);
+            } else {
+              toast(`No new notes (${skippedCount} duplicates)`);
+            }
+          } catch (err) {
+            console.error(err);
+            toast('CSV import failed: ' + err.message, true);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // ===== GOOGLE DRIVE SYNC =====
+    const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+    function getSettings() {
+      return {
+        googleClientId: localStorage.getItem('omoi_google_client_id') || '1079079471790-v8bu4qru68qia8vbqv1i88cg0t7alcg0.apps.googleusercontent.com'
+      };
+    }
+
+    function getDeletedIds() {
+      try {
+        return new Set(JSON.parse(localStorage.getItem('omoi_deleted_ids') || '[]'));
+      } catch {
+        return new Set();
+      }
+    }
+    function trackDeletedId(id) {
+      if (id === undefined || id === null) return;
+      const set = getDeletedIds();
+      set.add(String(id));
+      localStorage.setItem('omoi_deleted_ids', JSON.stringify(Array.from(set)));
+    }
+
+    function mergeArraysById(localList = [], remoteList = []) {
+      const map = new Map();
+      const deletedSet = getDeletedIds();
+
+      function getItemTimestamp(item) {
+        if (!item) return 0;
+        if (item.updatedAt) return Number(item.updatedAt);
+        if (item.createdAt) return Number(item.createdAt);
+        if (typeof item.id === 'number') return item.id;
+        return 0;
+      }
+
+      for (const item of (remoteList || [])) {
+        if (item && item.id !== undefined && item.id !== null) {
+          const key = String(item.id);
+          if (!deletedSet.has(key)) map.set(key, item);
+        }
+      }
+
+      for (const item of (localList || [])) {
+        if (item && item.id !== undefined && item.id !== null) {
+          const key = String(item.id);
+          if (deletedSet.has(key)) continue;
+          if (!map.has(key)) {
+            map.set(key, item);
+          } else {
+            const remoteItem = map.get(key);
+            if (getItemTimestamp(item) >= getItemTimestamp(remoteItem)) {
+              map.set(key, item);
+            }
+          }
+        }
+      }
+
+      return Array.from(map.values());
+    }
+
+    function isDriveTokenValid() {
+      const token = localStorage.getItem('omoi_drive_token');
+      const expiry = localStorage.getItem('omoi_drive_token_expiry');
+      return token && expiry && Date.now() < parseInt(expiry);
+    }
+
+    function getDriveAuthUrl() {
+      const state = Date.now().toString();
+      localStorage.setItem('omoi_oauth_state', state);
+      const clientId = getSettings().googleClientId;
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: window.location.origin + window.location.pathname,
+        scope: GOOGLE_DRIVE_SCOPE,
+        response_type: 'token',
+        state: state,
+        include_granted_scopes: 'true'
+      });
+      return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    }
+
+    async function getDriveToken() {
+      const clientId = getSettings().googleClientId;
+      if (!clientId) { toast('No Google Client ID', true); throw new Error('No client ID'); }
+      if (!isDriveTokenValid()) {
+        if (window.location.protocol === 'file:') {
+          toast('Sync requires running via http/https (e.g. localhost)', true);
+          throw new Error('OAuth requires http/https origin');
+        }
+        window.location.href = getDriveAuthUrl();
+        throw new Error('Authentication required');
+      }
+      return localStorage.getItem('omoi_drive_token');
+    }
+
+    async function checkOAuthCallback() {
+      const hash = window.location.hash;
+      if (hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const expiresIn = params.get('expires_in');
+        if (accessToken) {
+          const expiry = Date.now() + (parseInt(expiresIn, 10) * 1000);
+          localStorage.setItem('omoi_drive_token', accessToken);
+          localStorage.setItem('omoi_drive_token_expiry', expiry.toString());
+          window.history.replaceState({}, document.title, window.location.pathname);
+          toast('Drive connected ✓');
+          return true;
+        }
+      }
+      return false;
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 60000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('Drive request timed out.');
+        }
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function isRetryableDriveError(err, res) {
+      if (res) return res.status === 429 || res.status >= 500;
+      if (!err) return false;
+      return err instanceof TypeError || /network|timed out|failed to fetch/i.test(err.message || '');
+    }
+
+    async function fetchWithRetry(url, options = {}, { timeoutMs = 60000, maxRetries = 4, label = 'Drive request' } = {}) {
+      let lastErr;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const res = await fetchWithTimeout(url, options, timeoutMs);
+          if (!res.ok && isRetryableDriveError(null, res) && attempt < maxRetries - 1) {
+            lastErr = new Error(`${label} failed (${res.status})`);
+            await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+            continue;
+          }
+          return res;
+        } catch (err) {
+          lastErr = err;
+          if (!isRetryableDriveError(err, null) || attempt >= maxRetries - 1) throw err;
+          await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)));
+        }
+      }
+      throw lastErr;
+    }
+
+    async function safeFindFile(token, filename) {
+      try {
+        const res = await fetchWithRetry(
+          'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({
+            spaces: 'appDataFolder',
+            q: `name='${filename}' and trashed = false`,
+            fields: 'files(id,name,size,modifiedTime)'
+          }),
+          { headers: { 'Authorization': `Bearer ${token}` } },
+          { label: `Looking up ${filename}` }
+        );
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.files && json.files[0];
+      } catch (err) {
+        return null;
+      }
+    }
+
+    async function downloadJson(token, fileId, label, expectedSize = 0) {
+      progressUpdate(`${label}…`);
+      const res = await fetchWithRetry(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        { headers: { 'Authorization': `Bearer ${token}` } },
+        { timeoutMs: 120000, label }
+      );
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const text = await res.text();
+      return JSON.parse(text);
+    }
+
+    async function driveUploadJson(token, fileId, data, filename) {
+      const body = JSON.stringify(data);
+      let url, method, headers, payload;
+
+      if (fileId) {
+        url = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
+        method = 'PATCH';
+        headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        payload = body;
+      } else {
+        const metadata = { name: filename, parents: ['appDataFolder'] };
+        const boundary = 'omoi_upload_boundary_' + Date.now();
+        payload =
+          `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
+          `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${boundary}--`;
+        url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+        method = 'POST';
+        headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`
+        };
+      }
+
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url);
+        for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+        xhr.timeout = 120000;
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve({ id: JSON.parse(xhr.responseText).id || fileId }); }
+            catch { resolve({ id: fileId }); }
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.ontimeout = () => reject(new Error(`Upload of ${filename} timed out.`));
+        xhr.send(payload);
+      });
+    }
+
+    async function dedupeDriveFilesByName(token, filename) {
+      try {
+        const res = await fetchWithRetry(
+          'https://www.googleapis.com/drive/v3/files?' + new URLSearchParams({
+            spaces: 'appDataFolder',
+            q: `name='${filename}' and trashed = false`,
+            fields: 'files(id,name,modifiedTime)'
+          }),
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        const json = await res.json();
+        const files = json.files || [];
+        if (files.length <= 1) return;
+        files.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
+        for (const dup of files.slice(1)) {
+          await fetchWithTimeout(`https://www.googleapis.com/drive/v3/files/${dup.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).catch(() => {});
+        }
+      } catch (err) {}
+    }
+
+    async function driveUploadWithRetry(token, fileId, data, filename, maxRetries = 3) {
+      for (let i = 0; i < maxRetries; i++) {
+        try { return await driveUploadJson(token, fileId, data, filename); }
+        catch (err) {
+          if (i >= maxRetries - 1) throw err;
+          await new Promise(r => setTimeout(r, 800 * Math.pow(2, i)));
+        }
+      }
+    }
+
+    async function backupToDrive() {
+      try {
+        await backupToDriveImpl();
+      } catch (err) {
+        if (err.message === 'Authentication required') return;
+        console.warn('Backup failed:', err);
+        progressError('Sync failed: ' + (err.message || 'Error'));
+      }
+    }
+
+    async function backupToDriveImpl() {
+      progressShow('Connecting...');
+      const token = await getDriveToken();
+
+      progressUpdate('Merging notes...');
+      const itemsFile = await safeFindFile(token, 'omoi_items.json');
+      if (itemsFile) {
+        try {
+          const remoteItemsData = await downloadJson(token, itemsFile.id, 'Reading Drive notes', itemsFile.size);
+          if (remoteItemsData) {
+            if (Array.isArray(remoteItemsData.deletedIds)) {
+              const set = getDeletedIds();
+              for (const dId of remoteItemsData.deletedIds) set.add(String(dId));
+              localStorage.setItem('omoi_deleted_ids', JSON.stringify(Array.from(set)));
+            }
+            const remoteNotes = Array.isArray(remoteItemsData.journalEntries) ? remoteItemsData.journalEntries : Object.values(remoteItemsData.journalEntries || {});
+            journalEntries = mergeArraysById(journalEntries, remoteNotes);
+            await saveAllEntriesToDB(journalEntries);
+            journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            journalRenderVersion++;
+            renderJournalList();
+          }
+        } catch (e) {
+          console.warn('Merge warning:', e);
+        }
+      }
+
+      progressUpdate('Uploading notes...');
+      const updatedItemsFile = await safeFindFile(token, 'omoi_items.json');
+      const itemsData = {
+        version: '6.0',
+        journalEntries: journalEntries,
+        deletedIds: Array.from(getDeletedIds())
+      };
+      await driveUploadWithRetry(token, updatedItemsFile ? updatedItemsFile.id : null, itemsData, 'omoi_items.json');
+      await dedupeDriveFilesByName(token, 'omoi_items.json');
+
+      const ts = Date.now();
+      localStorage.setItem('omoi_last_backup_ts', String(ts));
+      const stats = {
+        backedUpNotesCount: journalEntries.length,
+        totalLocalNotes: journalEntries.length,
+        lastSyncTime: ts
+      };
+      localStorage.setItem('omoi_drive_stats', JSON.stringify(stats));
+
+      progressDone('Sync complete ✓');
+      toast('Sync complete ✓');
+    }
+
+    // Progress Bar
+    function progressShow(label) {
+      const wrap = document.getElementById('progressBar');
+      const l = document.getElementById('progressBarLabel');
+      if (l) l.textContent = label;
+      if (wrap) wrap.classList.add('show');
+    }
+    function progressUpdate(label) {
+      const l = document.getElementById('progressBarLabel');
+      if (l) l.textContent = label;
+    }
+    function progressDone(label) {
+      const l = document.getElementById('progressBarLabel');
+      if (l) l.textContent = label;
+      setTimeout(() => {
+        document.getElementById('progressBar')?.classList.remove('show');
+      }, 1800);
+    }
+    function progressError(label) {
+      const l = document.getElementById('progressBarLabel');
+      if (l) l.textContent = label;
+      setTimeout(() => {
+        document.getElementById('progressBar')?.classList.remove('show');
+      }, 3000);
+    }
+    function requestStop() {
+      document.getElementById('progressBar')?.classList.remove('show');
+    }
+
+    // App Initialization (Default to Write)
+    function initApp() {
+      if (window.omoi_initialized) return;
+      window.omoi_initialized = true;
+
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+
+      setTimeout(async () => {
+        try {
+          ['omoi_known_traits', 'omoi_persona', 'themeSortMode'].forEach(k => localStorage.removeItem(k));
+          await loadAllData();
+
+          switchTab('write');
+          initEntryDateTime();
+          loadDraft();
+
+          const textarea = document.getElementById('entry-note');
+          if (textarea) textarea.addEventListener('input', saveDraft);
+
+          const justConnected = await checkOAuthCallback();
+          if (justConnected) {
+            backupToDrive();
+          }
+        } catch (err) {
+          console.error('App failed to initialize:', err);
+        }
+      }, 10);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#entry-topic') && !e.target.closest('#topic-dropdown')) {
+        const dd = document.getElementById('topic-dropdown');
+        if (dd) dd.style.display = 'none';
+      }
+      if (!e.target.closest('#edit-note-topic') && !e.target.closest('#edit-topic-dropdown')) {
+        const dd = document.getElementById('edit-topic-dropdown');
+        if (dd) dd.style.display = 'none';
+      }
+    });
+
+    // Escape key modal handler
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        const threadExpModal = document.getElementById('threadExportModal');
+        if (threadExpModal && threadExpModal.classList.contains('open')) {
+          closeThreadExportModal();
+          return;
+        }
+        const renameModal = document.getElementById('renameThreadModal');
+        if (renameModal && renameModal.classList.contains('open')) {
+          closeRenameThreadModal(null);
+          return;
+        }
+        const delThreadModal = document.getElementById('deleteThreadModal');
+        if (delThreadModal && delThreadModal.classList.contains('open')) {
+          closeDeleteThreadModal(false);
+          return;
+        }
+        const deleteModal = document.getElementById('deleteConfirmModal');
+        if (deleteModal && deleteModal.classList.contains('open')) {
+          closeDeleteConfirmModal(false);
+          return;
+        }
+        const editModal = document.getElementById('editNoteModal');
+        if (editModal && editModal.classList.contains('open')) {
+          closeEditNoteModal();
+          return;
+        }
+        const dateModal = document.getElementById('dateFilterModal');
+        if (dateModal && dateModal.classList.contains('open')) {
+          closeDateFilterModal();
+          return;
+        }
+        const backupModal = document.getElementById('backupModal');
+        if (backupModal && backupModal.classList.contains('open')) {
+          closeBackupModal();
+          return;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
