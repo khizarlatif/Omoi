@@ -138,6 +138,45 @@
       letter-spacing: 0.2px;
     }
 
+    /* Centered Navigation Tabs */
+    .tabs-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      color: var(--muted);
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 22px;
+      height: 38px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: none;
+      user-select: none;
+    }
+    .tab-btn:hover {
+      background: var(--hover);
+      color: var(--text);
+      border-color: var(--border-color-hover);
+    }
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--text);
+      border-color: var(--green);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
     @media (max-width: 680px) {
       .container {
         padding: 6px 10px 8px 10px;
@@ -150,6 +189,15 @@
       }
       .dash-subtitle {
         font-size: 12px;
+      }
+      .tabs-wrap {
+        margin-bottom: 8px;
+        gap: 8px;
+      }
+      .tab-btn {
+        height: 36px;
+        font-size: 13px;
+        padding: 0 16px;
       }
       .journal-toolbar {
         flex-direction: column !important;
@@ -683,7 +731,9 @@
     }
 
     .note-read-more {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
       font-size: 12px;
       font-weight: 800;
       color: #00e676;
@@ -693,6 +743,7 @@
       border: none;
       padding: 0;
       font-family: inherit;
+      white-space: nowrap;
       transition: color 0.15s ease;
     }
     .note-read-more:hover {
@@ -863,6 +914,12 @@
       <div class="dash-subtitle">Personal Journal &amp; Memory Vault</div>
     </div>
 
+    <!-- Centered Navigation Tabs -->
+    <div class="tabs-wrap">
+      <button type="button" class="tab-btn active" id="tab-btn-write" onclick="switchTab('write')">✍️ Write</button>
+      <button type="button" class="tab-btn" id="tab-btn-history" onclick="switchTab('history')">📜 Journal</button>
+    </div>
+
     <!-- The Big Box -->
     <div class="big-box">
       <main class="app-content">
@@ -898,10 +955,9 @@
               <textarea id="entry-note" style="width:100%; flex:1; min-height:80px; resize:none;" placeholder="Write..."></textarea>
             </div>
 
-            <!-- Bottom Actions: Journal on Left, Save on Right -->
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-              <button type="button" class="btn-outline" onclick="switchTab('history')" title="View Journal" style="height:40px; font-size:13.5px; padding:0 18px;">📜 Journal</button>
-              <button type="button" class="btn-outline" onclick="saveJournalEntry()" title="Save Note" style="height:40px; font-size:13.5px; padding:0 24px;">💾 Save</button>
+            <!-- Bottom Action: Save Note (Full Width) -->
+            <div style="display:flex; align-items:center; flex-shrink:0;">
+              <button type="button" class="btn-outline" onclick="saveJournalEntry()" title="Save Note" style="width:100%; height:40px; font-size:13.5px; padding:0 24px;">💾 Save</button>
             </div>
           </div>
         </div>
@@ -1091,7 +1147,7 @@
     let isSearching = false;
     let currentSearchTerm = '';
     let searchDebounceTimer = null;
-    const TRUNCATE_CHARS = 100;
+    const TRUNCATE_CHARS = 200;
     const expandedNotesThreads = new Set();
     const expandedNotesNotes = new Set();
     const revealedNotesThreads = new Set();
@@ -1142,11 +1198,24 @@
     async function loadAllData() {
       try {
         const d = await openDB();
-        journalEntries = await new Promise(res => {
+        const raw = await new Promise(res => {
           const tx = d.transaction('entries', 'readonly');
           tx.objectStore('entries').getAll().onsuccess = e => res(e.target.result || []);
         });
-        journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        let needsDbSave = false;
+        journalEntries = (raw || []).map(entry => {
+          if (!entry) return entry;
+          if ('createdAt' in entry || 'updatedAt' in entry) {
+            delete entry.createdAt;
+            delete entry.updatedAt;
+            needsDbSave = true;
+          }
+          return entry;
+        });
+        journalEntries.sort(compareEntriesDesc);
+        if (needsDbSave) {
+          saveAllEntriesToDB(journalEntries).catch(() => {});
+        }
       } catch (ex) {
         console.error('Failed to load data:', ex);
       }
@@ -1229,6 +1298,23 @@
       h = h % 12 || 12;
       return `${h}:${m} ${ampm}`;
     }
+    function getEntryDateTime(entry) {
+      if (!entry) return 0;
+      const d = entry.date || '';
+      const t = normalizeTimeTo24Hour(entry.time);
+      const timeStr = (t && t !== '--:--') ? t : '00:00';
+      if (d) {
+        const dt = new Date(`${d}T${timeStr}:00`).getTime();
+        if (!isNaN(dt)) return dt;
+      }
+      if (typeof entry.id === 'number') return entry.id;
+      return 0;
+    }
+    function compareEntriesDesc(a, b) {
+      const diff = getEntryDateTime(b) - getEntryDateTime(a);
+      if (!isNaN(diff) && diff !== 0) return diff;
+      return (Number(b?.id) || 0) - (Number(a?.id) || 0);
+    }
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -1254,10 +1340,13 @@
 
     // Tab Navigation
     function switchTab(tabId) {
-      hapticFeedback('light');
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const panel = document.getElementById('panel-' + tabId);
       if (panel) panel.classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('tab-btn-' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
 
       if (tabId === 'history') {
         renderJournalList();
@@ -1515,7 +1604,8 @@
         const threads = getEntryThreads(entry);
         if (threads.includes(thread)) {
           entry.threads = threads.map(t => t === thread ? renamed : t);
-          entry.updatedAt = Date.now();
+          delete entry.createdAt;
+          delete entry.updatedAt;
         }
       });
 
@@ -1539,7 +1629,8 @@
         if (!threads.includes(thread)) return true;
         if (threads.length > 1) {
           e.threads = threads.filter(t => t !== thread);
-          e.updatedAt = Date.now();
+          delete e.createdAt;
+          delete e.updatedAt;
           return true;
         }
         toDelete.push(e.id);
@@ -1591,12 +1682,11 @@
         date,
         time: normalizeTimeTo24Hour(time) || '--:--',
         note,
-        threads: [...noteThreadsDraft],
-        createdAt: now.toISOString(),
-        updatedAt: Date.now()
+        threads: [...noteThreadsDraft]
       };
 
-      journalEntries.unshift(entry);
+      journalEntries.push(entry);
+      journalEntries.sort(compareEntriesDesc);
       journalRenderVersion++;
 
       document.getElementById('entry-note').value = '';
@@ -1651,8 +1741,7 @@
     // Render individual note
     function renderSingleNote(entry, forceReveal = false) {
       let text = entry.note || '';
-      const lines = text.split('\n');
-      const isLong = text.length > TRUNCATE_CHARS || lines.length > 3;
+      const isLong = text.length > TRUNCATE_CHARS;
       const expSet = (journalViewMode === 'threads') ? expandedNotesThreads : expandedNotesNotes;
       const revSet = (journalViewMode === 'threads') ? revealedNotesThreads : revealedNotesNotes;
       const expanded = expSet.has(entry.id) || expSet.has(String(entry.id));
@@ -1660,24 +1749,45 @@
 
       let displayTextHtml;
       if (isLong && !expanded) {
-        let snippetLines = lines.slice(0, 3).join('\n');
-        if (snippetLines.length > TRUNCATE_CHARS) {
-          snippetLines = snippetLines.slice(0, TRUNCATE_CHARS).trimEnd();
+        let cut = TRUNCATE_CHARS;
+        const nextSpace = text.indexOf(' ', TRUNCATE_CHARS);
+        const nextNewline = text.indexOf('\n', TRUNCATE_CHARS);
+        let boundary = -1;
+        if (nextSpace !== -1 && nextNewline !== -1) {
+          boundary = Math.min(nextSpace, nextNewline);
+        } else if (nextSpace !== -1) {
+          boundary = nextSpace;
+        } else if (nextNewline !== -1) {
+          boundary = nextNewline;
         }
-        displayTextHtml = escapeHtml(snippetLines).replace(/\n/g, '<br>') + '…';
+        if (boundary !== -1 && boundary - TRUNCATE_CHARS <= 25) {
+          cut = boundary;
+        }
+        const snippet = text.slice(0, cut).trimEnd();
+        displayTextHtml = escapeHtml(snippet).replace(/\n/g, '<br>') + '…';
       } else {
         displayTextHtml = escapeHtml(text).replace(/\n/g, '<br>');
       }
 
       const readMoreBtn = isLong
-        ? `<span class="note-read-more" id="read-more-${entry.id}" onclick="toggleNoteExpand('${entry.id}')" role="button" tabindex="0">${expanded ? '▲ Less' : '▼ More'}</span>`
+        ? `<span class="note-read-more" id="read-more-${entry.id}" onclick="event.stopPropagation(); toggleNoteExpand('${entry.id}')" role="button" tabindex="0">${expanded ? '▲ Read less' : '▼ Read more'}</span>`
         : '';
       const blurClass = revealed ? 'revealed' : 'blurred';
       const eyeIcon = revealed ? '🙈' : '👁️';
 
       const entryThreads = getEntryThreads(entry);
-      const threadBadges = entryThreads.length > 0
-        ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${entryThreads.map(t => `<span class="note-thread-pill readonly" onclick="event.stopPropagation(); openThread(decodeURIComponent('${encodeURIComponent(t)}'))">🧵 ${escapeHtml(t)}</span>`).join('')}</div>`
+      const threadBadgesHtml = entryThreads.map(t =>
+        `<span class="note-thread-pill readonly" onclick="event.stopPropagation(); openThread(decodeURIComponent('${encodeURIComponent(t)}'))">🧵 ${escapeHtml(t)}</span>`
+      ).join('');
+
+      const hasFooter = entryThreads.length > 0 || isLong;
+      const footerHtml = hasFooter
+        ? `<div class="note-footer" style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <div class="note-threads-badges" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; flex:1; min-width:0;">
+              ${threadBadgesHtml}
+            </div>
+            ${readMoreBtn ? `<div style="margin-left:auto; display:flex; align-items:center; flex-shrink:0;">${readMoreBtn}</div>` : ''}
+          </div>`
         : '';
 
       return `
@@ -1691,8 +1801,7 @@
           </div>
         </div>
         <div class="note-text ${blurClass}" id="note-text-${entry.id}">${displayTextHtml}</div>
-        ${readMoreBtn}
-        ${threadBadges}
+        ${footerHtml}
       </div>`;
     }
 
@@ -1720,11 +1829,7 @@
         filtered = filtered.filter(e => e.date === currentDateFilter);
       }
 
-      filtered.sort((a, b) => {
-        const aT = normalizeTimeTo24Hour(a.time) || '00:00';
-        const bT = normalizeTimeTo24Hour(b.time) || '00:00';
-        return new Date(`${b.date}T${bT}:00`) - new Date(`${a.date}T${aT}:00`);
-      });
+      filtered.sort(compareEntriesDesc);
 
       // Filter toolbar buttons (all identical to calendar button: btn-duo btn-card, no fill)
       filtersContainer.innerHTML = `
@@ -1746,12 +1851,6 @@
           onclick="openBackupModal()"
           title="Backup &amp; Sync"
         >💾</button>
-        <button
-          type="button"
-          class="btn-duo btn-card journal-filter-btn"
-          onclick="switchTab('write')"
-          title="Write note"
-        >✍️</button>
       `;
 
       if (filtered.length === 0) {
@@ -2020,8 +2119,10 @@
         journalEntries[index].time = timeVal ? (normalizeTimeTo24Hour(timeVal) || '--:--') : '--:--';
         journalEntries[index].note = noteVal;
         journalEntries[index].threads = [...editNoteThreadsDraft];
-        journalEntries[index].updatedAt = Date.now();
+        delete journalEntries[index].createdAt;
+        delete journalEntries[index].updatedAt;
 
+        journalEntries.sort(compareEntriesDesc);
         journalRenderVersion++;
         renderJournalList();
         hapticFeedback('success');
@@ -2289,9 +2390,7 @@
                   date: item.date,
                   time: normalizeTimeTo24Hour(item.time) || '--:--',
                   note: item.note,
-                  threads: Array.isArray(item.threads) ? item.threads : [],
-                  createdAt: item.createdAt || new Date().toISOString(),
-                  updatedAt: item.updatedAt || Date.now()
+                  threads: Array.isArray(item.threads) ? item.threads : []
                 });
                 addedCount++;
               } else {
@@ -2300,7 +2399,7 @@
             }
 
             if (addedCount > 0) {
-              journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              journalEntries.sort(compareEntriesDesc);
               await saveAllEntriesToDB(journalEntries);
               journalRenderVersion++;
               renderJournalList();
@@ -2507,9 +2606,7 @@
                   date,
                   time,
                   note,
-                  threads,
-                  createdAt: `${date}T${time !== '--:--' ? time : '00:00'}:00.000Z`,
-                  updatedAt: Date.now()
+                  threads
                 });
                 addedCount++;
               } else {
@@ -2518,7 +2615,7 @@
             }
 
             if (addedCount > 0) {
-              journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              journalEntries.sort(compareEntriesDesc);
               await saveAllEntriesToDB(journalEntries);
               journalRenderVersion++;
               renderJournalList();
@@ -2565,21 +2662,24 @@
 
       function getItemTimestamp(item) {
         if (!item) return 0;
-        if (item.updatedAt) return Number(item.updatedAt);
-        if (item.createdAt) return Number(item.createdAt);
-        if (typeof item.id === 'number') return item.id;
-        return 0;
+        return getEntryDateTime(item);
       }
 
-      for (const item of (remoteList || [])) {
-        if (item && item.id !== undefined && item.id !== null) {
+      for (const rawItem of (remoteList || [])) {
+        if (rawItem && rawItem.id !== undefined && rawItem.id !== null) {
+          const item = { ...rawItem };
+          delete item.createdAt;
+          delete item.updatedAt;
           const key = String(item.id);
           if (!deletedSet.has(key)) map.set(key, item);
         }
       }
 
-      for (const item of (localList || [])) {
-        if (item && item.id !== undefined && item.id !== null) {
+      for (const rawItem of (localList || [])) {
+        if (rawItem && rawItem.id !== undefined && rawItem.id !== null) {
+          const item = { ...rawItem };
+          delete item.createdAt;
+          delete item.updatedAt;
           const key = String(item.id);
           if (deletedSet.has(key)) continue;
           if (!map.has(key)) {
@@ -2825,7 +2925,7 @@
             const remoteNotes = Array.isArray(remoteItemsData.journalEntries) ? remoteItemsData.journalEntries : Object.values(remoteItemsData.journalEntries || {});
             journalEntries = mergeArraysById(journalEntries, remoteNotes);
             await saveAllEntriesToDB(journalEntries);
-            journalEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            journalEntries.sort(compareEntriesDesc);
             journalRenderVersion++;
             renderJournalList();
           }
