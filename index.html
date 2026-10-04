@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Omoi</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * {
       margin: 0;
@@ -962,7 +963,7 @@
           </div>
         </div>
 
-        <!-- JOURNAL PANEL (Thread Cards View) -->
+        <!-- JOURNAL PANEL -->
         <div id="panel-history" class="panel">
           <div class="journal-toolbar-wrap" style="flex-shrink:0; background:var(--surface); padding-bottom:8px; margin-bottom:4px;">
             <div class="journal-toolbar">
@@ -1137,7 +1138,7 @@
     // State
     let journalEntries = [];
     let journalRenderVersion = 0;
-    let journalViewMode = 'threads'; // 'threads' or 'notes'
+    let journalViewMode = 'notes'; // 'threads' or 'notes'
     const openThreadIds = new Set();
     let noteThreadsDraft = [];
     let editNoteThreadsDraft = [];
@@ -1377,11 +1378,28 @@
       return [];
     }
     function getTopicsList() {
-      const set = new Set();
-      journalEntries.forEach(e => {
-        getEntryThreads(e).forEach(t => set.add(t));
+      const threadLatestMap = new Map();
+
+      journalEntries.forEach(entry => {
+        const threads = getEntryThreads(entry);
+        if (threads.length === 0) return;
+        const entryTime = getEntryDateTime(entry);
+        threads.forEach(t => {
+          const currentLatest = threadLatestMap.get(t) || 0;
+          if (entryTime > currentLatest) {
+            threadLatestMap.set(t, entryTime);
+          }
+        });
       });
-      return Array.from(set).sort();
+
+      return Array.from(threadLatestMap.keys()).sort((a, b) => {
+        const timeA = threadLatestMap.get(a) || 0;
+        const timeB = threadLatestMap.get(b) || 0;
+        if (timeB !== timeA) {
+          return timeB - timeA; // newest used thread first
+        }
+        return a.localeCompare(b); // tie-breaker: alphabetical order
+      });
     }
 
     // Write note threads
@@ -2055,14 +2073,18 @@
         const today = new Date();
         const isToday = day === today.getDate() && calendarMonth === today.getMonth() && calendarYear === today.getFullYear();
 
-        let style = 'padding:6px 0; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--border-color); background:var(--card); color:var(--text); cursor:pointer; position:relative;';
+        let style = 'padding:6px 0; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--border-color); background:var(--card); color:var(--text); cursor:pointer; position:relative; transition:all 0.15s ease;';
         if (isSelected) {
-          style += 'background:#00e676; color:#031c0c; border-color:#00e676; font-weight:900;';
+          style += 'background:#00e676; color:#031c0c; border-color:#00e676; font-weight:900; box-shadow:0 0 8px var(--green-shadow);';
+        } else if (hasNotes) {
+          style += 'border-color:var(--amber); background:rgba(255, 200, 0, 0.12); color:#fff; font-weight:800; box-shadow:0 0 8px rgba(255, 200, 0, 0.25);';
+          if (isToday) {
+            style += 'outline:1px solid #00a2ff;';
+          }
         } else if (isToday) {
           style += 'border-color:#00a2ff; font-weight:800;';
         }
-        const noteDot = hasNotes ? `<span style="position:absolute; bottom:2px; left:50%; transform:translateX(-50%); color:${isSelected ? '#031c0c' : 'var(--amber)'}; font-size:8px;">●</span>` : '';
-        html += `<button type="button" style="${style}" onclick="setDateFilter('${dateStr}'); closeDateFilterModal();">${day}${noteDot}</button>`;
+        html += `<button type="button" style="${style}" onclick="setDateFilter('${dateStr}'); closeDateFilterModal();">${day}</button>`;
       }
       html += '</div>';
       container.innerHTML = html;
@@ -2635,71 +2657,192 @@
     }
 
     // ===== GOOGLE DRIVE SYNC =====
+    // ===== GOOGLE DRIVE SYNC (500-Item Chunking, Tombstones & GIS) =====
     const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+    const CHUNK_SIZE = 500;
+
     function getSettings() {
       return {
         googleClientId: localStorage.getItem('omoi_google_client_id') || '1079079471790-v8bu4qru68qia8vbqv1i88cg0t7alcg0.apps.googleusercontent.com'
       };
     }
 
-    function getDeletedIds() {
+    function getTombstones() {
       try {
-        return new Set(JSON.parse(localStorage.getItem('omoi_deleted_ids') || '[]'));
+        const raw = JSON.parse(localStorage.getItem('omoi_tombstones') || '[]');
+        const now = Date.now();
+        // Keep tombstones active for 30 days so deletions propagate reliably
+        return raw.filter(t => t && t.id && (now - (t.deletedAt || 0) < 30 * 86400 * 1000));
       } catch {
-        return new Set();
+        return [];
       }
     }
+
+    function saveTombstones(list) {
+      const now = Date.now();
+      const active = (list || []).filter(t => t && t.id && (now - (t.deletedAt || 0) < 30 * 86400 * 1000));
+      localStorage.setItem('omoi_tombstones', JSON.stringify(active));
+    }
+
+    function getDeletedIds() {
+      const set = new Set(getTombstones().map(t => String(t.id)));
+      try {
+        JSON.parse(localStorage.getItem('omoi_deleted_ids') || '[]').forEach(id => set.add(String(id)));
+      } catch {}
+      return set;
+    }
+
     function trackDeletedId(id) {
       if (id === undefined || id === null) return;
+      const idStr = String(id);
+      const tombstones = getTombstones();
+      if (!tombstones.some(t => String(t.id) === idStr)) {
+        tombstones.push({ id: idStr, deletedAt: Date.now() });
+        saveTombstones(tombstones);
+      }
       const set = getDeletedIds();
-      set.add(String(id));
+      set.add(idStr);
       localStorage.setItem('omoi_deleted_ids', JSON.stringify(Array.from(set)));
     }
 
-    function mergeArraysById(localList = [], remoteList = []) {
-      const map = new Map();
-      const deletedSet = getDeletedIds();
-
-      function getItemTimestamp(item) {
-        if (!item) return 0;
-        return getEntryDateTime(item);
+    // Conflict Resolution: keeps newer note, preserves conflicting version as a copy
+    function mergeSingleNoteWithConflictCopy(existingLocal, remoteNote, conflictCopiesList) {
+      if (!existingLocal) return remoteNote;
+      if (
+        existingLocal.note === remoteNote.note &&
+        existingLocal.date === remoteNote.date &&
+        existingLocal.time === remoteNote.time
+      ) {
+        return existingLocal;
       }
 
-      for (const rawItem of (remoteList || [])) {
-        if (rawItem && rawItem.id !== undefined && rawItem.id !== null) {
-          const item = { ...rawItem };
-          delete item.createdAt;
-          delete item.updatedAt;
-          const key = String(item.id);
-          if (!deletedSet.has(key)) map.set(key, item);
+      const localTs = getEntryDateTime(existingLocal);
+      const remoteTs = getEntryDateTime(remoteNote);
+
+      if (remoteTs > localTs) {
+        if (existingLocal.note && existingLocal.note !== remoteNote.note) {
+          conflictCopiesList.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            date: existingLocal.date,
+            time: existingLocal.time,
+            threads: existingLocal.threads ? [...existingLocal.threads] : [],
+            note: `[Conflict Copy - Local ${existingLocal.date || ''}]\n${existingLocal.note}`
+          });
         }
-      }
-
-      for (const rawItem of (localList || [])) {
-        if (rawItem && rawItem.id !== undefined && rawItem.id !== null) {
-          const item = { ...rawItem };
-          delete item.createdAt;
-          delete item.updatedAt;
-          const key = String(item.id);
-          if (deletedSet.has(key)) continue;
-          if (!map.has(key)) {
-            map.set(key, item);
-          } else {
-            const remoteItem = map.get(key);
-            if (getItemTimestamp(item) >= getItemTimestamp(remoteItem)) {
-              map.set(key, item);
-            }
-          }
+        return remoteNote;
+      } else {
+        if (remoteNote.note && remoteNote.note !== existingLocal.note) {
+          conflictCopiesList.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            date: remoteNote.date,
+            time: remoteNote.time,
+            threads: remoteNote.threads ? [...remoteNote.threads] : [],
+            note: `[Conflict Copy - Cloud ${remoteNote.date || ''}]\n${remoteNote.note}`
+          });
         }
+        return existingLocal;
+      }
+    }
+
+    // 500-Item Chunking: partition notes chronologically ascending so older chunks stay frozen
+    function hashChunkContent(notes) {
+      const str = notes.map(n => `${n.id}:${n.date}:${n.time}:${(n.note || '').length}:${hashString(n.note)}`).join('|');
+      return hashString(str);
+    }
+
+    function partitionNotesIntoChunks(allNotes, existingManifestChunks = []) {
+      const sorted = [...allNotes].sort((a, b) => getEntryDateTime(a) - getEntryDateTime(b));
+      const chunks = [];
+      let chunkIndex = 1;
+
+      for (let i = 0; i < sorted.length; i += CHUNK_SIZE) {
+        const chunkNotes = sorted.slice(i, i + CHUNK_SIZE);
+        const filename = `omoi_chunk_${String(chunkIndex).padStart(3, '0')}.json`;
+        const hash = hashChunkContent(chunkNotes);
+        const existing = existingManifestChunks.find(c => c.filename === filename);
+        const isChanged = !existing || existing.hash !== hash;
+        const updatedAt = isChanged ? Date.now() : (existing?.updatedAt || Date.now());
+
+        chunks.push({
+          chunkIndex,
+          filename,
+          count: chunkNotes.length,
+          hash,
+          updatedAt,
+          isChanged,
+          notes: chunkNotes
+        });
+        chunkIndex++;
       }
 
-      return Array.from(map.values());
+      if (chunks.length === 0) {
+        chunks.push({
+          chunkIndex: 1,
+          filename: 'omoi_chunk_001.json',
+          count: 0,
+          hash: hashChunkContent([]),
+          updatedAt: Date.now(),
+          isChanged: true,
+          notes: []
+        });
+      }
+
+      return chunks;
     }
 
     function isDriveTokenValid() {
       const token = localStorage.getItem('omoi_drive_token');
       const expiry = localStorage.getItem('omoi_drive_token_expiry');
-      return token && expiry && Date.now() < parseInt(expiry);
+      return token && expiry && Date.now() < parseInt(expiry, 10);
+    }
+
+    // Google Identity Services (GIS) Token Management
+    let gisTokenClient = null;
+    function getGISTokenClient() {
+      if (gisTokenClient) return gisTokenClient;
+      if (typeof google !== 'undefined' && google.accounts?.oauth2) {
+        const clientId = getSettings().googleClientId;
+        if (!clientId) return null;
+        gisTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: GOOGLE_DRIVE_SCOPE,
+          callback: () => {}
+        });
+        return gisTokenClient;
+      }
+      return null;
+    }
+
+    async function requestGISToken(promptMode = '') {
+      return new Promise((resolve) => {
+        try {
+          const client = getGISTokenClient();
+          if (!client) return resolve(null);
+          let settled = false;
+          client.callback = (resp) => {
+            if (settled) return;
+            settled = true;
+            if (resp && resp.access_token) {
+              const expiresIn = parseInt(resp.expires_in, 10) || 3600;
+              const expiry = Date.now() + expiresIn * 1000;
+              localStorage.setItem('omoi_drive_token', resp.access_token);
+              localStorage.setItem('omoi_drive_token_expiry', expiry.toString());
+              resolve(resp.access_token);
+            } else {
+              resolve(null);
+            }
+          };
+          client.requestAccessToken({ prompt: promptMode });
+          setTimeout(() => {
+            if (!settled) {
+              settled = true;
+              resolve(null);
+            }
+          }, 10000);
+        } catch {
+          resolve(null);
+        }
+      });
     }
 
     function getDriveAuthUrl() {
@@ -2720,15 +2863,30 @@
     async function getDriveToken() {
       const clientId = getSettings().googleClientId;
       if (!clientId) { toast('No Google Client ID', true); throw new Error('No client ID'); }
-      if (!isDriveTokenValid()) {
-        if (window.location.protocol === 'file:') {
-          toast('Sync requires running via http/https (e.g. localhost)', true);
-          throw new Error('OAuth requires http/https origin');
-        }
-        window.location.href = getDriveAuthUrl();
-        throw new Error('Authentication required');
+      if (isDriveTokenValid()) {
+        return localStorage.getItem('omoi_drive_token');
       }
-      return localStorage.getItem('omoi_drive_token');
+
+      // Try GIS silent background renewal first (no page refresh / no redirect)
+      if (typeof google !== 'undefined' && google.accounts?.oauth2) {
+        try {
+          const silentToken = await requestGISToken('');
+          if (silentToken) return silentToken;
+
+          const interactiveToken = await requestGISToken('consent');
+          if (interactiveToken) return interactiveToken;
+        } catch (e) {
+          console.warn('GIS error:', e);
+        }
+      }
+
+      // Fallback to standard redirect
+      if (window.location.protocol === 'file:') {
+        toast('Sync requires running via http/https (e.g. localhost or GitHub Pages)', true);
+        throw new Error('OAuth requires http/https origin');
+      }
+      window.location.href = getDriveAuthUrl();
+      throw new Error('Authentication required');
     }
 
     async function checkOAuthCallback() {
@@ -2911,50 +3069,182 @@
       progressShow('Connecting...');
       const token = await getDriveToken();
 
-      progressUpdate('Merging notes...');
-      const itemsFile = await safeFindFile(token, 'omoi_items.json');
-      if (itemsFile) {
+      progressUpdate('Checking cloud backups...');
+
+      // 1. Look for omoi_manifest.json on Drive
+      let manifestFile = await safeFindFile(token, 'omoi_manifest.json');
+      let remoteManifest = null;
+
+      if (manifestFile) {
         try {
-          const remoteItemsData = await downloadJson(token, itemsFile.id, 'Reading Drive notes', itemsFile.size);
-          if (remoteItemsData) {
-            if (Array.isArray(remoteItemsData.deletedIds)) {
-              const set = getDeletedIds();
-              for (const dId of remoteItemsData.deletedIds) set.add(String(dId));
-              localStorage.setItem('omoi_deleted_ids', JSON.stringify(Array.from(set)));
-            }
-            const remoteNotes = Array.isArray(remoteItemsData.journalEntries) ? remoteItemsData.journalEntries : Object.values(remoteItemsData.journalEntries || {});
-            journalEntries = mergeArraysById(journalEntries, remoteNotes);
-            await saveAllEntriesToDB(journalEntries);
-            journalEntries.sort(compareEntriesDesc);
-            journalRenderVersion++;
-            renderJournalList();
-          }
+          remoteManifest = await downloadJson(token, manifestFile.id, 'Reading cloud manifest', manifestFile.size);
         } catch (e) {
-          console.warn('Merge warning:', e);
+          console.warn('Failed to read remote manifest:', e);
         }
       }
 
-      progressUpdate('Uploading notes...');
-      const updatedItemsFile = await safeFindFile(token, 'omoi_items.json');
-      const itemsData = {
-        version: '6.0',
-        journalEntries: journalEntries,
-        deletedIds: Array.from(getDeletedIds())
-      };
-      await driveUploadWithRetry(token, updatedItemsFile ? updatedItemsFile.id : null, itemsData, 'omoi_items.json');
-      await dedupeDriveFilesByName(token, 'omoi_items.json');
+      // 2. Backward compatibility: If no manifest exists, check for legacy omoi_items.json
+      if (!remoteManifest) {
+        const legacyFile = await safeFindFile(token, 'omoi_items.json');
+        if (legacyFile) {
+          try {
+            const legacyData = await downloadJson(token, legacyFile.id, 'Migrating older backup', legacyFile.size);
+            if (legacyData && Array.isArray(legacyData.journalEntries)) {
+              const legacyNotes = legacyData.journalEntries;
+              const map = new Map(journalEntries.map(e => [String(e.id), e]));
+              for (const item of legacyNotes) {
+                if (item && item.id && !map.has(String(item.id))) {
+                  delete item.createdAt;
+                  delete item.updatedAt;
+                  map.set(String(item.id), item);
+                }
+              }
+              journalEntries = Array.from(map.values());
+              if (Array.isArray(legacyData.deletedIds)) {
+                const tombstones = getTombstones();
+                legacyData.deletedIds.forEach(id => {
+                  if (!tombstones.some(t => String(t.id) === String(id))) {
+                    tombstones.push({ id: String(id), deletedAt: Date.now() });
+                  }
+                });
+                saveTombstones(tombstones);
+              }
+            }
+          } catch (e) {
+            console.warn('Legacy migration error:', e);
+          }
+        }
+      }
 
-      const ts = Date.now();
-      localStorage.setItem('omoi_last_backup_ts', String(ts));
+      // 3. Process Tombstones (30-day deletion tracking across devices)
+      const localTombstones = getTombstones();
+      const remoteTombstones = (remoteManifest && Array.isArray(remoteManifest.tombstones)) ? remoteManifest.tombstones : [];
+      const allTombstonesMap = new Map();
+      [...localTombstones, ...remoteTombstones].forEach(t => {
+        if (t && t.id) {
+          const key = String(t.id);
+          const existing = allTombstonesMap.get(key);
+          if (!existing || (t.deletedAt || 0) > (existing.deletedAt || 0)) {
+            allTombstonesMap.set(key, t);
+          }
+        }
+      });
+      const mergedTombstones = Array.from(allTombstonesMap.values());
+      saveTombstones(mergedTombstones);
+      const deletedIdSet = new Set(mergedTombstones.map(t => String(t.id)));
+
+      // Purge any locally deleted notes
+      journalEntries = journalEntries.filter(e => !deletedIdSet.has(String(e.id)));
+
+      // 4. Download and merge ONLY chunks that are newer or missing locally
+      let localManifestChunks = [];
+      try {
+        localManifestChunks = JSON.parse(localStorage.getItem('omoi_local_chunks_meta') || '[]');
+      } catch {}
+
+      const conflictCopies = [];
+
+      if (remoteManifest && Array.isArray(remoteManifest.chunks)) {
+        for (const rChunk of remoteManifest.chunks) {
+          const lChunk = localManifestChunks.find(c => c.filename === rChunk.filename);
+          const needsDownload = !lChunk || (rChunk.updatedAt || 0) > (lChunk.updatedAt || 0) || rChunk.hash !== lChunk.hash;
+
+          if (needsDownload) {
+            progressUpdate(`Syncing ${rChunk.filename}...`);
+            const chunkFile = await safeFindFile(token, rChunk.filename);
+            if (chunkFile) {
+              try {
+                const chunkData = await downloadJson(token, chunkFile.id, `Reading ${rChunk.filename}`, chunkFile.size);
+                if (chunkData && Array.isArray(chunkData.notes)) {
+                  const localMap = new Map(journalEntries.map(e => [String(e.id), e]));
+                  for (const rNote of chunkData.notes) {
+                    if (!rNote || !rNote.id || deletedIdSet.has(String(rNote.id))) continue;
+                    delete rNote.createdAt;
+                    delete rNote.updatedAt;
+                    const existingLocal = localMap.get(String(rNote.id));
+                    const resolvedNote = mergeSingleNoteWithConflictCopy(existingLocal, rNote, conflictCopies);
+                    localMap.set(String(resolvedNote.id), resolvedNote);
+                  }
+                  journalEntries = Array.from(localMap.values());
+                }
+              } catch (e) {
+                console.warn(`Error syncing ${rChunk.filename}:`, e);
+              }
+            }
+          }
+        }
+      }
+
+      // Add any preserved conflict copies
+      if (conflictCopies.length > 0) {
+        journalEntries.push(...conflictCopies);
+        toast(`Preserved ${conflictCopies.length} conflict copy note(s)`);
+      }
+
+      // Save merged notes to local database and refresh UI
+      await saveAllEntriesToDB(journalEntries);
+      journalEntries.sort(compareEntriesDesc);
+      journalRenderVersion++;
+      renderJournalList();
+
+      // 5. Partition local notes into 500-item chunks and upload ONLY changed chunks
+      progressUpdate('Checking changes to upload...');
+      const activeRemoteChunks = (remoteManifest && Array.isArray(remoteManifest.chunks)) ? remoteManifest.chunks : [];
+      const partitionedChunks = partitionNotesIntoChunks(journalEntries, activeRemoteChunks);
+
+      let uploadedChunksCount = 0;
+      for (const chunk of partitionedChunks) {
+        if (chunk.isChanged) {
+          progressUpdate(`Uploading ${chunk.filename}...`);
+          let targetFile = await safeFindFile(token, chunk.filename);
+          const chunkPayload = {
+            version: '7.0',
+            chunkIndex: chunk.chunkIndex,
+            updatedAt: chunk.updatedAt,
+            notes: chunk.notes
+          };
+          await driveUploadWithRetry(token, targetFile ? targetFile.id : null, chunkPayload, chunk.filename);
+          await dedupeDriveFilesByName(token, chunk.filename);
+          uploadedChunksCount++;
+        }
+      }
+
+      // 6. Upload updated omoi_manifest.json with chunks index and active tombstones
+      progressUpdate('Updating cloud manifest...');
+      manifestFile = await safeFindFile(token, 'omoi_manifest.json');
+      const manifestData = {
+        version: '7.0',
+        lastSyncTime: Date.now(),
+        tombstones: mergedTombstones,
+        chunks: partitionedChunks.map(c => ({
+          chunkIndex: c.chunkIndex,
+          filename: c.filename,
+          count: c.count,
+          hash: c.hash,
+          updatedAt: c.updatedAt
+        }))
+      };
+
+      await driveUploadWithRetry(token, manifestFile ? manifestFile.id : null, manifestData, 'omoi_manifest.json');
+      await dedupeDriveFilesByName(token, 'omoi_manifest.json');
+
+      // 7. Store local chunk metadata and sync stats
+      localStorage.setItem('omoi_local_chunks_meta', JSON.stringify(manifestData.chunks));
+      localStorage.setItem('omoi_last_backup_ts', String(manifestData.lastSyncTime));
+
       const stats = {
         backedUpNotesCount: journalEntries.length,
         totalLocalNotes: journalEntries.length,
-        lastSyncTime: ts
+        chunksCount: partitionedChunks.length,
+        lastSyncTime: manifestData.lastSyncTime
       };
       localStorage.setItem('omoi_drive_stats', JSON.stringify(stats));
 
-      progressDone('Sync complete ✓');
-      toast('Sync complete ✓');
+      const msg = uploadedChunksCount > 0
+        ? `Sync complete ✓ (${uploadedChunksCount} chunk(s) updated)`
+        : 'Sync complete ✓ (All chunks up to date)';
+      progressDone(msg);
+      toast(msg);
     }
 
     // Progress Bar
